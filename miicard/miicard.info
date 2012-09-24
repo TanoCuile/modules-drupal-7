@@ -1,0 +1,11 @@
+name = miiCard
+description = Allows users to authenticate against the miiCard service
+package = "Authentication"
+core = 7.x
+version = "7.x-0.5"
+
+configure = admin/config/people/miicard
+
+files[] = miicard.entity.inc
+files[] = miicard.api.inc
+files[] = oauth/OAuth.php

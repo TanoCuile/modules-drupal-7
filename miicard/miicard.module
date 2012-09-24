@@ -1,0 +1,558 @@
+<?php
+
+/**
+ * @file
+ * Lets users authenticate using the miicard oAuth service and
+ * provide trusted profile information
+ */
+
+define('MIICARD_OAUTH', 'https://sts.miicard.com/auth/OAuth.ashx');
+define('MIICARD_API',   'https://sts.miicard.com/api/v1/Claims.svc/json/GetClaims');
+define('MIICARD_ADD_LINK', 'Add miiCard');
+define('MIICARD_SIGN_IN_LINK', 'Sign in with miiCard');
+define('MIICARD_REMOVE_LINK', 'Remove link with miiCard');
+
+
+/**
+ * Implements hook_menu().
+ */
+function miicard_menu() {
+  $items['admin/config/people/miicard'] = array(
+    'title' => 'miiCard',
+    'description' => 'Settings for miiCard API',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('miicard_admin_settings'),
+    'access arguments' => array('administer site configuration'),
+    'file' => 'miicard.admin.inc',
+  );
+
+  $items['user/%user/miicard'] = array(
+    'title' => 'miiCard',
+    'description' => 'miiCard Identity Assurance',
+    'page callback' => 'miicard_view_identity',
+    'page arguments' => array(1),
+    'access callback' => 'user_view_access',
+    'access arguments' => array(1),
+    'type' => MENU_LOCAL_TASK,
+    'file' => 'miicard.pages.inc',
+  );
+  
+  $items['user/login/miicard'] = array(
+    'title' => 'miiCard login',
+    'page callback' => 'miicard_redirect',
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+    'file' => 'miicard.pages.inc',
+  );
+  
+  $items['user/login/miicard/callback'] = array(
+    'title' => 'miiCard login',
+    'page callback' => 'miicard_callback',
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+    'file' => 'miicard.pages.inc',
+  );
+  
+  $items['user/miicard/delete'] = array(
+    'title' => 'Remove miiCard',
+    'page callback' => 'miicard_remove',
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+    'file' => 'miicard.pages.inc',
+  );
+  
+  // Add tab for mappings to user entity fields
+  if (module_exists('field')) {
+    $items['admin/config/people/accounts/miicard'] = array(
+      'title' => 'miiCard mappings',
+      'description' => 'Map miiCard fields to User entity fields',
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('miicard_map_fields_form'),
+      'access arguments' => array('administer site configuration'),
+      'file' => 'miicard.fields.inc',
+    	'type' => MENU_LOCAL_TASK,
+    );
+  }
+  
+  // Add tab for mappings to user profile fields
+  if (module_exists('profile')) {
+    $items['admin/config/people/profile/settings'] = array(
+    	'title' => 'Profiles',
+    	'type' => MENU_DEFAULT_LOCAL_TASK,
+    );
+    $items['admin/config/people/profile/miicard'] = array(
+      'title' => 'miiCard mappings',
+      'description' => 'Map miiCard fields to User profile fields',
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('miicard_map_profile_form'),
+      'access arguments' => array('administer site configuration'),
+      'file' => 'miicard.profile.inc',
+      'type' => MENU_LOCAL_TASK,
+    );
+  }
+
+  return $items;
+}
+
+function miicard_entity_info() {
+  $entity = array(
+    'miicard' => array(
+      'label' => t('miiCard'), 
+      'controller class' => 'miiCardController', 
+      'base table' => 'miicard', 
+      'uri callback' => 'miicard_uri', 
+      'label callback' => 'format_miicard_account', 
+      'fieldable' => TRUE, 
+      'entity keys' => array(
+        'id' => 'uid',
+      ), 
+      'bundles' => array(
+        'miicard' => array(
+          'label' => t('miiCard'), 
+          'admin' => array(
+            'path' => 'admin/config/people/miicard',
+            'access arguments' => array('administer site configuration'),
+          ),
+        ),
+      ), 
+      'view modes' => array(
+        'full' => array(
+          'label' => t('miiCard'), 
+          'custom settings' => FALSE,
+        ),
+      ),
+    ),
+  );
+  
+  return $entity;
+}
+
+/**
+ * Implements hook_user_delete()
+ */
+function miicard_user_delete($account) {
+  _miicard_identity_delete($account);  
+}
+ 
+/**
+ * Implements hook_user_presave()
+ */
+function miicard_user_presave(&$edit, $account, $category) {
+  $miicard = _miicard_identity_load($account);
+  
+  module_load_include('inc', 'miicard', 'miicard.fields');
+  miicard_field_create_user($edit, $miicard);
+  
+  if (module_exists('profile')) {
+    module_load_include('inc', 'miicard', 'miicard.profile');
+    miicard_profile_create_user($edit, $miicard);
+    _miicard_save_profile($edit, $account);
+  }
+}
+ 
+/**
+ * Implements hook_form_alter().
+ */
+function miicard_form_alter(&$form, $form_state, $form_id) {
+  switch ($form_id) {
+    case 'user_login':
+    case 'user_login_block':
+    case 'user_register_form':
+      $items = array();
+      $items[] = miicard_button();
+  
+      $form['miicard'] = array(
+        '#markup' => theme('item_list', array('items' => $items)),
+      );
+      break;
+
+    case 'user_profile_form':
+      global $user;
+      if (substr($user->name, -12) != '@miicard.com') {
+        unset($form['account']['pass']);
+
+        unset($form['account']['current_pass']);
+        unset($form['account']['current_pass_required_values']);
+        $form['#validate'] = array_diff($form['#validate'], array('user_validate_current_pass'));
+      }
+      break;      
+  }
+}
+
+/**
+ * Implements hook_block_info().
+ */
+function miicard_block_info() {
+  $block['miicard_signin']['info'] = t('Sign in with miiCard');
+  $block['miicard_signin']['cache'] = DRUPAL_CACHE_GLOBAL;
+  $block['miicard_profile']['info'] = t('User miiCard details');
+  $block['miicard_profile']['cache'] = DRUPAL_CACHE_PER_USER;
+  $block['miicard_image']['info'] = t('User miiCard image');
+  $block['miicard_image']['cache'] = DRUPAL_CACHE_PER_USER;
+  return $block;
+}
+
+/**
+ * Implements hook_block_view().
+ */
+function miicard_block_view($delta) {
+  global $user;
+
+  switch($delta) {
+    case 'miicard_signin':
+      if (!$user->uid) {
+        $block['subject'] = '';
+        $items[] = miicard_button();
+        $block['content'] = theme('item_list', array('items' => $items));
+        return $block;
+      }
+      break;
+
+    case 'miicard_profile':
+      if ($user->uid) {
+        $block['subject'] = t('miiCard profile');
+        $block['content'] = miicard_view_identity($user);
+        return $block;
+      }
+      break;
+      
+    case 'miicard_image':
+      if ($user->uid) {
+        $block['subject'] = '';
+        $block['content'] = miicard_view_image($user);
+        return $block;
+      }
+      break;
+      
+  }
+}
+
+
+/**
+ * Return a link to sign in with miicard
+ */
+function miicard_button($text = '') {
+  if (empty($text)) {
+    $text = miicard_sign_in_text();
+  }
+  return l(t($text), 'user/login/miicard', array('attributes' => array('class' => array('miicardLoginButton'))));
+}
+
+function miicard_url($uid) {
+  $miicard = _miicard_identity_load($uid);
+  return !$miicard ? '' : $miicard->url; 
+}
+
+function _miicard_identity_load($account) {
+  $uid = 0;
+  if (is_object($account)) {
+    $uid = $account->uid;
+  }
+  elseif (is_array($account)) {
+    $uid = $account['uid'];
+  }
+  elseif (is_numeric($account)) {
+    $uid = $account;
+  }
+  
+  return reset(entity_load('miicard', array($uid)));
+}
+
+/**
+ * Update/save local copy of miiCard public data from API
+ * 
+ * @param $miicard
+ * A miiCard API class holding the current miiCard public data
+ */
+function _miicard_identity_save(&$miicard) {
+  $error = FALSE;
+
+  try {
+    if ($miicard->uid && !$miicard->error) {
+      if ($miicard->expired) {
+        db_update('miicard')
+          ->key(array('uid' => $miicard->uid))
+          ->fields(array(
+            'access_token' => serialize(array()),
+          ))
+          ->execute();
+      }
+      else {
+        db_merge('miicard')
+          ->key(array('uid' => $miicard->uid))
+          ->fields(array(
+            'url' => $miicard->url,
+            'username' => $miicard->username,
+            'refreshed' => time(),
+            'access_token' => serialize($miicard->token_store()),
+          	'data' => serialize($miicard->data),
+          ))
+          ->execute();
+      }
+    }
+    else {
+      if (!$miicard->uid) {
+        drupal_set_message(t('miiCard user not valid'), 'error');
+      }
+      $error = TRUE;
+    }
+  }
+  catch (Exception $e) {
+    $error = TRUE;
+    drupal_set_message(t('Could not process miiCard data'), 'error');
+    watchdog("miiCard", "miiCard save to database failed: %error", array("%error" => $e->getMessage()), WATCHDOG_ERROR);
+  }
+  
+  # Update user fields and profile fields
+  if (!$error) {
+    $account = user_load($miicard->uid);
+    user_save($account);
+  }
+  
+  return !$error;
+}
+
+function _miicard_identity_delete($account) {
+  $uid = $account->uid;
+  $miicard = _miicard_identity_load($account);
+  
+  $transaction = db_transaction();
+  if (!empty($uid)) {
+    try {
+      field_attach_delete('miicard', $miicard);
+      db_delete('authmap')
+       ->condition('uid', $uid)
+       ->condition('module', 'miicard')
+       ->execute();
+      db_delete('miicard')
+       ->condition('uid', $uid)
+       ->execute();
+    }
+    catch (Exception $e) {
+      $transaction->rollback();
+      watchdog_exception('miicard', $e);
+      throw $e;
+    }
+
+    entity_get_controller('miicard')->resetCache();
+    user_save($account);
+  }
+}
+
+/**
+ * Implementation of hook_cron
+ */
+function miicard_cron() {
+  $interval = variable_get('miicard_refresh_period', 0);
+
+  if ($interval > 0) {
+    $in_batch = variable_get('miicard_in_batch', 0);
+
+    if (!$in_batch) {
+      if ((time() - variable_get('miicard_last_check', 0)) > $interval) {
+        variable_set('miicard_last_check', time());
+        variable_set('miicard_in_batch', 1);
+        _miicard_refresh();
+      }
+    }
+    else {
+      _miicard_refresh();
+    }
+  }  
+}
+
+/**
+ * Batch update miiCard records using miiCard API and stored access tokens
+ */
+function _miicard_refresh() {
+  // Get max_execution_time from configuration, override 0 with 240 seconds.
+  $max_execution_time = ini_get('max_execution_time') == 0 ? 240 : ini_get('max_execution_time');
+  $batch_size = $max_execution_time;
+  $age = time() - variable_get('miicard_refresh_period', 0);
+  $s = serialize(array());
+  
+  $sql = "SELECT * FROM {miicard} WHERE refreshed < :refreshed AND access_token <> '$s' ORDER BY refreshed, uid ASC";
+  $result = db_query_range($sql, 0, $batch_size, array(':refreshed' => $age));
+  $cards = $result->fetchAll();
+  
+  if (count($cards) < $batch_size) {
+    variable_set('miicard_in_batch', 0);
+  }
+  foreach ($cards as $row) {
+    // Make sure we have enough time to validate the card.
+    drupal_set_time_limit(240);
+
+    _miicard_update_card(unserialize($row->access_token), $row->uid);
+    // Save the user so any profile or field mappings are updated
+    $account = user_load($row->uid);
+    user_save($account);
+    
+    if ((timer_read('page') / 1000) > ($max_execution_time / 2)) {
+      variable_set('miicard_in_batch', 1);
+      break; // Stop once we have used over half of the maximum execution time.
+    }
+  }
+}
+
+/**
+ * Update the miiCard entity from the miiCard API
+ * 
+ * @param $token
+ * The stored access token array
+ * 
+ * @param $uid
+ * The Drupal uid for the user whose miiCard we're updating
+ */
+function _miicard_update_card($token, $uid) {
+  $key = variable_get('miicard_consumer_key', '');
+  $secret = variable_get('miicard_consumer_secret', '');
+  
+  $miicard = new miiCard($key, $secret, $token['oauth_token'], $token['oauth_token_secret']);
+  $miicard->uid = $uid;
+  $miicard->dictionary_request(TRUE);
+  
+  _miicard_identity_save($miicard);
+}
+
+
+/**
+ * Display miiCard public image retrieved through API
+ */
+function miicard_view_image($account) {
+  $miicard = _miicard_identity_load($account);
+  $url = $alt = '';
+  
+  if (is_object($miicard) && $miicard->data['HasPublicProfile']) {
+    $url = $miicard->data['CardImageUrl'];
+    $alt = t('miiCard Image');
+  }
+  
+  return theme('miicard_image', array('src' => $url, 'alt' => $alt));
+}
+
+/**
+ * Display miiCard public information retrieved through API
+ */
+function miicard_view_identity($account) {
+  global $user;
+
+  $miicard = _miicard_identity_load($account);
+  $output = theme('miicard', array('uid' => $account->uid));
+  
+  if (!empty($miicard) && ($user->uid == $account->uid)) {
+    $items[] = l(t(miicard_remove_link_text()), 'user/miicard/delete');
+    $output .= theme('item_list', array('items' => $items));
+  }
+  
+  if (empty($miicard) && ($user->uid == $account->uid)) {
+    $output .= '<p>' . l(t(miicard_add_link_text()), 'user/login/miicard') . '</p>';
+  }
+
+  return $output;
+}
+
+function miicard_sign_in_text() {
+  return variable_get('miicard_sign_in_link', MIICARD_SIGN_IN_LINK);
+}
+function miicard_add_link_text() {
+  return variable_get('miicard_add_link', MIICARD_ADD_LINK);
+}
+function miicard_remove_link_text() {
+  return variable_get('miicard_remove_link', MIICARD_REMOVE_LINK);
+}
+
+/**
+ * Implementation of hook_theme()
+ */
+function miicard_theme() {
+  return array(
+    'miicard' => array(
+      'variables' => array('uid' => NULL),
+    ),
+    'miicard_template' => array(
+      'variables' => array('miicard' => array()),
+      'template' => 'miicard-card',
+    ),
+    'miicard_image' => array(
+      'variables' => array('src' => '', 'alt' => ''),
+      'template' => 'miicard-image',
+    ),
+  );
+}
+
+function theme_miicard($variables) {
+  global $user;
+  $miicard = _miicard_identity_load($variables['uid']);
+  $data = is_object($miicard) ? $miicard->data : array();
+  $public = ($user->uid != $variables['uid']);
+  _miicard_validate_data($data, $public);
+  
+  return theme('miicard_template', array('miicard' => $data));
+}
+
+function _miicard_filter_list($list, $primary = FALSE, $verified = TRUE) {
+  $filtered = array();
+  if (!empty($list)) {
+    foreach ($list as $item) {
+      if (!(($verified && !$item['Verified']) || ($primary && !$item['IsPrimary']))) {
+        $filtered[] = $item;
+      }
+    }
+  }
+  
+  return $filtered;
+}
+
+function _miicard_validate_data(&$data, $public) {
+  if (empty($data)) {
+    $data = array(
+      'LastVerified' => 0,
+      'IdentityAssured' => 0,
+      'HasPublicProfile' => 0,
+      'PublicProfile' => array(),
+    );
+    $public = TRUE;
+  }
+  
+  if ($public) {
+    $defaults = array(
+      'Salutation' => '',
+      'FullName' => '',
+      'FirstName' => '',
+      'MiddleName' => '',
+      'LastName' => '',
+      'PreviousFirstName' => '',
+      'PreviousMiddleName' => '',
+      'PreviousLastName' => '',
+      'LastVerified' => $data['LastVerified'],
+      'ProfileUrl' => '',
+      'ProfileShortUrl' => '',
+      'CardImageUrl' => '',
+      'EmailAddresses' => array(),
+      'Identities' => array(),
+      'PhoneNumbers' => array(),
+      'PostalAddresses' => array(),
+      'IdentityAssured' => $data['IdentityAssured'],
+      'HasPublicProfile' => $data['HasPublicProfile'],
+    );
+    if (empty($data['PublicProfile'])) {
+      $data['PublicProfile'] = array();
+    }
+    
+    $data = $data['PublicProfile'] + $defaults;
+  }
+  
+  if (!$data['HasPublicProfile']) {
+    $data['ProfileUrl'] = '';
+    $data['ProfileShortUrl'] = '';
+    $data['CardImageUrl'] = '';
+  }
+
+  $data['EmailAddress'] = reset(_miicard_filter_list($data['EmailAddresses'], TRUE));
+  $data['EmailAddresses'] = _miicard_filter_list($data['EmailAddresses']);
+  $data['PhoneNumber'] = reset(_miicard_filter_list($data['PhoneNumbers'], TRUE));
+  $data['PhoneNumbers'] = _miicard_filter_list($data['PhoneNumbers']);
+  $data['PostalAddress'] = reset(_miicard_filter_list($data['PostalAddresses'], TRUE));
+  $data['PostalAddresses'] = _miicard_filter_list($data['PostalAddresses']);
+  $data['Identities'] = _miicard_filter_list($data['Identities']);
+}

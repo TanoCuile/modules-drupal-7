@@ -1,0 +1,145 @@
+<?php
+
+/**
+ * @file
+ * Install, update and uninstall functions for the miiCard module.
+ */
+
+/**
+ * Implements hook_requirements()
+ */
+function miicard_requirements($phase) {
+  $requirements = array();
+
+  $t = get_t();
+
+  if ($phase == 'runtime') {
+    $requirements['miicard_oauth']['title'] = $t('OAuth library for miiCard');
+    if (!class_exists('OAuthRequest')) {
+      $requirements['miicard_oauth']['value'] = $t('Not installed');
+      $requirements['miicard_oauth']['severity'] = REQUIREMENT_ERROR;
+      $requirements['miicard_oauth']['description'] = $t('miiCard: OAuth PHP library not found.');
+    }
+    else {
+      $requirements['miicard_oauth']['value'] = l('OAuth ' . OAuthRequest::$version, 'https://code.google.com/p/oauth/', array('external' => TRUE));
+      $requirements['miicard_oauth']['severity'] = REQUIREMENT_OK;
+    }
+
+    if (!variable_get('miicard_consumer_key', FALSE) || !variable_get('miicard_consumer_secret', FALSE)) {
+      $requirements['miicard_conf'] = array(
+        'title' => $t('miiCard'),
+        'value' => $t('Not configured'),
+        'severity' => REQUIREMENT_WARNING,
+        'description' => $t('Consumer key and secret must be provided. !link', array('!link' => l($t('Settings page'), 'admin/config/people/miicard'))),
+      );
+    }
+  }
+
+  return $requirements;
+}
+
+/**
+ * Implements hook_install()
+ */
+function miicard_install() {
+  variable_set('miicard_oauth', MIICARD_OAUTH);
+  variable_set('miicard_api', MIICARD_API);
+  variable_set('miicard_add_link', MIICARD_ADD_LINK);
+  variable_set('miicard_sign_in_link', MIICARD_SIGN_IN_LINK);
+}
+
+/**
+ * Implements hook_uninstall()
+ */
+function miicard_uninstall() {
+  variable_del('miicard_consumer_key');
+  variable_del('miicard_consumer_secret');
+  variable_del('miicard_oauth');
+  variable_del('miicard_api');
+  variable_del('miicard_refresh_period');
+  variable_del('miicard_in_batch');
+  variable_del('miicard_last_check');
+  variable_del('miicard_enable_profile_module');
+  variable_del('miicard_add_link');
+  variable_del('miicard_sign_in_link');
+  variable_del('miicard_user_fields');
+  variable_del('miicard_profile_fields');
+  variable_del('miicard_remove_link');
+}
+
+/**
+ * Implements hook_schema()
+ */
+function miicard_schema() {
+  $schema['miicard'] = array(
+    'description' => "Local cache of miiCard data",
+    'fields' => array(
+      'uid' => array(
+        'description' => 'User ID foreign key: {users}.uid and primary key for the miiCard',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'access_token' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'serialize' => TRUE,
+        'description' => "miiCard OAuth access token",
+      ),
+      'username' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'description' => "User's miiCard Username",
+      ),
+      'url' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => "User's miiCard URL",
+      ),
+      'data' => array(
+        'type' => 'blob',
+        'not null' => FALSE,
+        'size' => 'big',
+        'serialize' => TRUE,
+        'description' => 'A serialized array of the public miiCard fields.  Future versions should probably see this replaced with entity fields.',
+      ),
+      'refreshed' => array(
+        'description' => 'The Unix timestamp when the miiCard was last refreshed.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+    ),
+    'indexes' => array(
+      'miicard_refreshed' => array('refreshed'),
+    ),
+    'foreign keys' => array(
+      'miicard_user' => array(
+        'table' => 'users',
+        'columns' => array('uid' => 'uid'),
+      ),
+    ),
+    'primary key' => array('uid'),
+  );
+  
+  return $schema;
+}
+
+function miicard_update_7004() {
+  db_add_field('miicard', 'username', 
+    array(
+      'type' => 'varchar',
+      'length' => 255,
+      'not null' => TRUE,
+      'description' => "User's miiCard Username",
+    )
+  );
+}
+
+function miicard_update_7005() {
+}
