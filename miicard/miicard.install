@@ -48,9 +48,9 @@ function miicard_install() {
   variable_set('miicard_sign_in_link', MIICARD_SIGN_IN_LINK);
 
   // Create a user role for miiCard verified users if it doesn't exist
-  if (!user_role_load_by_name(MIICARD_ROLE_NAME)) {
+  if (!user_role_load_by_name(MIICARD_USER_ROLE)) {
     $role = new stdClass();
-    $role->name = MIICARD_ROLE_NAME;
+    $role->name = MIICARD_USER_ROLE;
     user_role_save($role);
   }
 }
