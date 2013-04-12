@@ -18,7 +18,7 @@ function miicard_map_fields_form() {
     '#weight' => 5,
   );
 
-  // Each field type can only map to certain type Facebook properties. Build a
+  // Each field type can only map to certain type of properties. Build a
   // list for each type that includes reasonable options.
   $properties = miicard_mapping_options();
   $property_options = array();
@@ -37,7 +37,7 @@ function miicard_map_fields_form() {
     if (isset($property_options[$field['type']])) {
       $options = array_merge(array('' => t('- Do not import -')), $property_options[$field['type']]);
       $form['miicard_user_fields'][$field_name] = array(
-        '#title' => t($instance['label']),
+        '#title' => check_plain(t($instance['label'])),
         '#type' => 'select',
         '#options' => $options,
         '#default_value' => isset($field_defaults[$field_name]) ? $field_defaults[$field_name] : '',
@@ -45,20 +45,20 @@ function miicard_map_fields_form() {
     }
     else {
       $form['miicard_user_fields'][$field_name] = array(
-        '#title' => t($instance['label']),
+        '#title' => check_plain(t($instance['label'])),
         '#type' => 'form_element',
         '#children' => '<em>' . t('No mappable miiCard properties.') . '</em>',
         '#theme_wrappers' => array('form_element'),
       );
     }
   }
-  
+
   $form['submit'] = array(
     '#type' => 'submit',
-    '#value' => t('Submit'),
+    '#value' => t('Map Fields'),
     '#weight' => 100,
   );
-  
+
   return $form;
 }
 
@@ -99,14 +99,16 @@ function miicard_field_create_user(&$edit, $miicard) {
 
 
 /**
- * miiCard data conversion functions.
+ * Make sure that the value returned from the API is a string or return NULL.
  */
 function miicard_field_convert_text($miicard_property_name, $miicard, $field, $instance) {
   $value = NULL;
-  if (isset($miicard->data[$miicard_property_name])) {
+  $func = "get{$miicard_property_name}";
+  $text = $miicard->data->$func();
+  if (isset($text)) {
     // Simple string values only, not arrays.
-    if (is_string($miicard->data[$miicard_property_name])) {
-      $value = $miicard->data[$miicard_property_name];
+    if (is_string($text)) {
+      $value = $text;
     }
   }
 
@@ -114,22 +116,32 @@ function miicard_field_convert_text($miicard_property_name, $miicard, $field, $i
 }
 
 /**
- * This function returns all three date formats (date, datetime, and datestamp) 
+ * Return boolean value from field
+ */
+function miicard_field_convert_boolean($miicard_property_name, $miicard, $field, $instance) {
+  $func = "get{$miicard_property_name}";
+  return $miicard->data->$func();
+}
+
+/**
+ * This function returns all three date formats (date, datetime, and datestamp)
  * and returns the appropriate data. Both date and datetime use ISO format of
  * YYYY-MM-DDTHH:MM:SS. Datestamp uses a UNIX timestamp.
  */
 function miicard_field_convert_date($miicard_property_name, $miicard, $field, $instance) {
   $value = NULL;
+  $func = "get{$miicard_property_name}";
   $type = isset($field['type']) ? $field['type'] : 'datetime';
-  $date = isset($miicard->data[$miicard_property_name]) ? $miicard->data[$miicard_property_name] : 0;
+  $prop = $miicard->data->func();
+  $date = isset($prop) ? $prop : 0;
   if ($date > 0) {
     if ($type == 'profile_date') {
       $d = getdate($date);
       $value = array(
         'value' => array(
-        	'year' => $d['year'], 
-        	'month' => $d['mon'], 
-        	'day' => $d['mday'],
+          'year' => $d['year'],
+          'month' => $d['mon'],
+          'day' => $d['mday'],
         ),
       );
     }
@@ -145,171 +157,282 @@ function miicard_field_convert_date($miicard_property_name, $miicard, $field, $i
   return $value;
 }
 
+/**
+ * Combine first and last name fields.
+ */
 function miicard_field_convert_full_name($miicard_property_name, $miicard, $field, $instance) {
   $value = NULL;
-  if (isset($miicard->data['FirstName']) && isset($miicard->data['LastName'])) {
-    if (is_string($miicard->data['FirstName']) && is_string($miicard->data['LastName'])) {
-      $value = $miicard->data['FirstName'] . ' ' . $miicard->data['LastName'];
+  $first = $miicard->data->getFirstName();
+  $last = $miicard->data->getLastName();
+  if (isset($first) && isset($last)) {
+    if (is_string($first) && is_string($last)) {
+      $value = $first . ' ' . $last;
     }
   }
 
   return $value ? array('value' => $value) : NULL;
 }
 
+/**
+ * If there's a value, pass it to mii_card_collection_primary with an
+ * appropriate conversion of the individual value.
+ */
 function miicard_field_convert_email_primary($miicard_property_name, $miicard, $field, $instance) {
   $value = NULL;
-  if (isset($miicard->data[$miicard_property_name])) {
-    $value = miicard_collection_primary($miicard->data[$miicard_property_name], 'miicard_convert_email_type');
+  $func = "get{$miicard_property_name}";
+  $prop = $miicard->data->$func();
+  if (isset($prop)) {
+    $value = miicard_collection_primary($prop, 'miicard_convert_email_type');
   }
-  
+
   return $value ? array('value' => $value) : NULL;
 }
 
+/**
+ * If there's a value, pass it to mii_card_collection_list with an
+ * appropriate conversion of the individual values.
+ */
 function miicard_field_convert_email_list($miicard_property_name, $miicard, $field, $instance) {
   $value = NULL;
+  $func = "get{$miicard_property_name}";
   $list = array();
-  if (isset($miicard->data[$miicard_property_name])) {
-    $list = miicard_collection_list($miicard->data[$miicard_property_name], 'miicard_convert_email_type');
+  $prop = $miicard->data->$func();
+  if (isset($prop)) {
+    $list = miicard_collection_list($prop, 'miicard_convert_email_type');
   }
   $value = join(', ', $list);
-  
+
   return $value ? array('value' => $value) : NULL;
 }
 
+/**
+ * If there's a value, pass it to mii_card_collection_primary with an
+ * appropriate conversion of the individual value.
+ */
 function miicard_field_convert_postal_primary($miicard_property_name, $miicard, $field, $instance) {
   $value = NULL;
-  if (isset($miicard->data[$miicard_property_name])) {
-    $value = miicard_collection_primary($miicard->data[$miicard_property_name], 'miicard_convert_postal_type');
+  $func = "get{$miicard_property_name}";
+  $prop = $miicard->data->$func();
+
+  if (isset($prop)) {
+    $value = miicard_collection_primary($prop, 'miicard_convert_postal_type');
   }
-  
+
   return $value ? array('value' => $value) : NULL;
 }
 
+/**
+ * If there's a value, pass it to mii_card_collection_list with an
+ * appropriate conversion of the individual values.
+ */
 function miicard_field_convert_postal_list($miicard_property_name, $miicard, $field, $instance) {
   $value = NULL;
+  $func = "get{$miicard_property_name}";
   $list = array();
-  if (isset($miicard->data[$miicard_property_name])) {
-    $list = miicard_collection_list($miicard->data[$miicard_property_name], 'miicard_convert_postal_type');
+  $prop = $miicard->data->$func();
+  if (isset($prop)) {
+    $list = miicard_collection_list($prop, 'miicard_convert_postal_type');
   }
   $value = join("\n\n", $list);
-  
+
   return $value ? array('value' => $value) : NULL;
 }
 
+/**
+ * If there's a value, pass it to mii_card_collection_list with an
+ * appropriate conversion of the individual values.
+ */
 function miicard_field_convert_identity_list($miicard_property_name, $miicard, $field, $instance) {
   $value = NULL;
+  $func = "get{$miicard_property_name}";
   $list = array();
-  if (isset($miicard->data[$miicard_property_name])) {
-    $list = miicard_collection_list($miicard->data[$miicard_property_name], 'miicard_convert_identity_type');
+  $prop = $miicard->data->$func();
+  if (isset($prop)) {
+    $list = miicard_collection_list($prop, 'miicard_convert_identity_type');
   }
   $value = theme('item_list', array('items' => $list));
-  
+
   return $list ? array('value' => $value) : NULL;
 }
 
+/**
+ * If there's a value, pass it to mii_card_collection_primary with an
+ * appropriate conversion of the individual value.
+ */
 function miicard_field_convert_phone_primary($miicard_property_name, $miicard, $field, $instance) {
   $value = NULL;
-  if (isset($miicard->data[$miicard_property_name])) {
-    $value = miicard_collection_primary($miicard->data[$miicard_property_name], 'miicard_convert_phone_type');
+  $func = "get{$miicard_property_name}";
+  $prop = $miicard->data->$func();
+  if (isset($prop)) {
+    $value = miicard_collection_primary($prop, 'miicard_convert_phone_type');
   }
-  
+
   return $value ? array('value' => $value) : NULL;
 }
 
+/**
+ * If there's a value, pass it to mii_card_collection_list with an
+ * appropriate conversion of the individual values.
+ */
 function miicard_field_convert_phone_list($miicard_property_name, $miicard, $field, $instance) {
   $value = NULL;
+  $func = "get{$miicard_property_name}";
   $list = array();
-  if (isset($miicard->data[$miicard_property_name])) {
-    $list = miicard_collection_list($miicard->data[$miicard_property_name], 'miicard_convert_phone_type');
+  $prop = $miicard->data->$func();
+  if (isset($prop)) {
+    $list = miicard_collection_list($prop, 'miicard_convert_phone_type');
   }
   $value = join(', ', $list);
-  
+
   return $value ? array('value' => $value) : NULL;
 }
 
+/**
+ * If there's a value, pass it to mii_card_collection_list with an
+ * appropriate conversion of the individual values.
+ */
+function miicard_field_convert_web_property_list($miicard_property_name, $miicard, $field, $instance) {
+  $value = NULL;
+  $func = "get{$miicard_property_name}";
+  $list = array();
+  $prop = $miicard->data->$func();
+  if (isset($prop)) {
+    $list = miicard_collection_list($prop, 'miicard_convert_web_property_type');
+  }
+  $value = join(', ', $list);
+
+  return $value ? array('value' => $value) : NULL;
+}
+
+/**
+ * Get the profile URL only if it's set and we have a public profile.
+ */
 function miicard_field_convert_profile_url($miicard_property_name, $miicard, $field, $instance) {
   $value = NULL;
-  if (isset($miicard->data[$miicard_property_name]) && isset($miicard->data['HasPublicProfile'])) {
-    if ($miicard->data['HasPublicProfile']) {
-      $value = miicard_field_convert_text($miicard_property_name, $miicard, $field, $instance);
-    }
+  $prop = $miicard->data->getProfileUrl();
+  if (isset($prop) && $miicard->data->getHasPublicProfile()) {
+    $value = miicard_field_convert_text($miicard_property_name, $miicard, $field, $instance);
   }
-  
+
   return $value;
 }
 
+/**
+ * Get the profile URL as a link only if it's set and we have a public profile.
+ */
 function miicard_field_convert_profile_link($miicard_property_name, $miicard, $field, $instance) {
   $value = NULL;
   if ($url = miicard_field_convert_profile_url($miicard_property_name, $miicard, $field, $instance)) {
     $value = l(t('miiCard profile'), $url['value']);
   }
-  
+
   return $value ? array('value' => $value) : NULL;
 }
 
+/**
+ * Get the card image as a profile link only if it's set and we have a public profile.
+ */
 function miicard_field_convert_card_image_link($miicard_property_name, $miicard, $field, $instance) {
   $value = NULL;
-  if ($url = miicard_field_convert_text('ProfileUrl', $miicard, $field, $instance)) {
+  if ($miicard->getHasPublicProfile() && $url = miicard_field_convert_text('ProfileUrl', $miicard, $field, $instance)) {
     if ($src = miicard_field_convert_text($miicard_property_name, $miicard, $field, $instance)) {
       $value = l(theme('image', array('path' => $src['value'], 'alt' => t('miiCard profile image'))), $url['value'], array('html' => TRUE));
     }
   }
-  
+
   return $value ? array('value' => $value) : NULL;
 }
 
+/**
+ * Email should be formatted correctly in place so do nothing.
+ */
 function miicard_convert_email_type($item) {
-  return $item['Address'];
+  return $item->getAddress();
 }
 
+/**
+ * Format identities as links
+ */
 function miicard_convert_identity_type($item) {
-  return l($item['Source'], $item['ProfileUrl']);
+  return l($item->getSource(), $item->getProfileUrl());
 }
 
+/**
+ * Build valid international dialing code for all phone numbers.
+ */
 function miicard_convert_phone_type($item) {
-  return '+' . $item['CountryCode'] . $item['NationalNumber'];
+  return '+' . $item->getCountryCode() . $item->getNationalNumber();
 }
 
+/**
+ * Web properties should be formatted correctly in place so do nothing.
+ */
+function miicard_convert_web_property_type($item) {
+  return $item->getDisplayName();
+}
+
+/**
+ * Build a complete postal address from it's contituent parts.
+ */
 function miicard_convert_postal_type($item) {
   $address = array(
-    $item['House'],
-    $item['Line1'],
-    $item['Line2'],
-    $item['City'],
-    $item['Region'],
-    $item['Code'],
-    $item['Country'],
+    $item->getHouse(),
+    $item->getLine1(),
+    $item->getLine2(),
+    $item->getCity(),
+    $item->getRegion(),
+    $item->getCode(),
+    $item->getCountry(),
   );
-  
+
   return join("\n", $address);
 }
 
+/**
+ * Build an array of the required field in the passed collection.
+ *
+ * @param Array $collection     The list to be converted
+ * @param Function $conversion  How to convert individual items
+ * @return Array:NULL
+ */
 function miicard_collection_list($collection, $conversion) {
   $list = array();
   if (is_array($collection)) {
     foreach ($collection as $item) {
-      if ($item['Verified']) {
+      if ($item->getVerified()) {
         $list[] = $conversion($item);
       }
     }
   }
-  
+
   return $list;
 }
 
+/**
+ * Build an array of the required field in the passed collection
+ * but only return those values that are marked as primary.
+ *
+ * @param Array $collection     The list to be converted
+ * @param Function $conversion  How to convert individual items
+ * @return Array:NULL
+ */
 function miicard_collection_primary($collection, $conversion) {
   $value = NULL;
   if (is_array($collection)) {
     foreach ($collection as $item) {
-      if ($item['IsPrimary'] && $item['Verified']) {
+      if ($item->getIsPrimary() && $item->getVerified()) {
         $value = $conversion($item);
       }
     }
   }
-  
+
   return $value;
 }
 
+/**
+ * Map each miiCard API call to the relevant conversion and
+ * handling functions so they can be used as fields.
+ */
 function miicard_mapping_options() {
   $options = array(
     'salutation' => array(
@@ -341,6 +464,12 @@ function miicard_mapping_options() {
       'label' => t('Last Name'),
       'conversion' => 'text',
       'field_types' => array('text', 'textfield'),
+    ),
+    'date_of_birth' => array(
+      'miicard' => 'DateOfBirth',
+      'label' => t('Date Of Birth'),
+      'conversion' => 'date',
+      'field_types' => array('text', 'textfield', 'date', 'datetime', 'datestamp'),
     ),
     'previous_first_name' => array(
       'miicard' => 'PreviousFirstName',
@@ -443,6 +572,24 @@ function miicard_mapping_options() {
       'label' => t('Primary Postal Address'),
       'conversion' => 'postal_primary',
       'field_types' => array('text_long', 'textarea'),
+    ),
+    'web_property_list' => array(
+      'miicard' => 'WebProperties',
+      'label' => t('Web Property List'),
+      'conversion' => 'web_property_list',
+      'field_types' => array('text', 'text_long', 'textfield', 'textarea', 'list'),
+    ),
+    'identity_assured' => array(
+      'miicard' => 'IdentityAssured',
+      'label' => t('Identity Assured'),
+      'conversion' => 'boolean',
+      'field_types' => array('list_boolean')
+    ),
+    'has_public_profile' => array(
+      'miicard' => 'HasPublicProfile',
+      'label' => t('Has Public Profile'),
+      'conversion' => 'boolean',
+      'field_types' => array('list_boolean')
     ),
   );
   ksort($options);

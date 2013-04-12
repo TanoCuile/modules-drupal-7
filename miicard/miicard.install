@@ -6,7 +6,7 @@
  */
 
 /**
- * Implements hook_requirements()
+ * Implements hook_requirements().
  */
 function miicard_requirements($phase) {
   $requirements = array();
@@ -39,17 +39,24 @@ function miicard_requirements($phase) {
 }
 
 /**
- * Implements hook_install()
+ * Implements hook_install().
  */
 function miicard_install() {
   variable_set('miicard_oauth', MIICARD_OAUTH);
   variable_set('miicard_api', MIICARD_API);
   variable_set('miicard_add_link', MIICARD_ADD_LINK);
   variable_set('miicard_sign_in_link', MIICARD_SIGN_IN_LINK);
+
+  // Create a user role for miiCard verified users if it doesn't exist
+  if (!user_role_load_by_name(MIICARD_ROLE_NAME)) {
+    $role = new stdClass();
+    $role->name = MIICARD_ROLE_NAME;
+    user_role_save($role);
+  }
 }
 
 /**
- * Implements hook_uninstall()
+ * Implements hook_uninstall().
  */
 function miicard_uninstall() {
   variable_del('miicard_consumer_key');
@@ -68,7 +75,7 @@ function miicard_uninstall() {
 }
 
 /**
- * Implements hook_schema()
+ * Implements hook_schema().
  */
 function miicard_schema() {
   $schema['miicard'] = array(
@@ -106,7 +113,7 @@ function miicard_schema() {
         'not null' => FALSE,
         'size' => 'big',
         'serialize' => TRUE,
-        'description' => 'A serialized array of the public miiCard fields.  Future versions should probably see this replaced with entity fields.',
+        'description' => 'A serialized MiiCardUserProfile object.  Future versions should probably see this replaced with entity fields.',
       ),
       'refreshed' => array(
         'description' => 'The Unix timestamp when the miiCard was last refreshed.',
@@ -126,12 +133,15 @@ function miicard_schema() {
     ),
     'primary key' => array('uid'),
   );
-  
+
   return $schema;
 }
 
+/**
+ * First update block.
+ */
 function miicard_update_7004() {
-  db_add_field('miicard', 'username', 
+  db_add_field('miicard', 'username',
     array(
       'type' => 'varchar',
       'length' => 255,
@@ -141,5 +151,8 @@ function miicard_update_7004() {
   );
 }
 
+/**
+ * Second update block.
+ */
 function miicard_update_7005() {
 }

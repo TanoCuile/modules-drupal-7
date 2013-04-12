@@ -9,11 +9,12 @@
  */
 ?>
 <div class="miicard-profile">
-  <h3><?php print "${miicard['FirstName']} ${miicard['LastName']}"; ?></h3>
-  <?php if ($miicard['CardImageUrl']): ?>
-  	<img class="miicard-image" alt="<?php print t('miiCard image');?>" src="<?php print $miicard['CardImageUrl']; ?>" />  
+  <?php if ($miicard):?>
+  <h3><?php print "{$miicard->getFirstName()} {$miicard->getLastName()}"; ?></h3>
+  <?php if ($miicard->getCardImageUrl() && $miicard->getHasPublicProfile()): ?>
+  	<img class="miicard-image" alt="<?php print t('miiCard image');?>" src="<?php print $miicard->getCardImageUrl(); ?>" />  
   <?php endif; ?>
-	<?php if ($miicard['IdentityAssured']): ?>
+	<?php if ($miicard->getIdentityAssured()): ?>
   	<p class="assured"><?php print t("Identity assured"); ?></p>
   <?php else: ?>
     <p class="not-assured"><?php print t("Identity NOT assured!"); ?></p>
@@ -23,38 +24,51 @@
   	<dt><?php print t('Last verified:')?></dt>
   	<dd>
   	  <?php 
-  	    if ($miicard['LastVerified']) {
-  	      print date('j F Y, g:ia', intval($miicard['LastVerified']));
+  	    if ($miicard->getLastVerified()) {
+  	      print date('j F Y, g:ia', intval($miicard->getLastVerified()));
   	    }
   	    else {
   	      print t('Unknown');
   	    }
       ?>
   	</dd>
-  	<?php if (!empty($miicard['EmailAddress'])): ?>
+  	<?php if ($miicard->getEmailAddresses()): ?>
   	  <dt><?php print t('Email address:'); ?></dt>
-  	  <dd><?php print $miicard['EmailAddress']['Address']; ?></dd>
+  	  <dd><?php
+  	    foreach ($miicard->getEmailAddresses() as $address) {
+          if ($address->getIsPrimary()) {
+    	    print $address->getAddress();
+    	    break;
+    	  }
+        }?></dd>
   	<?php endif; ?>
-  	<?php if (!empty($miicard['PhoneNumber'])): ?>
+  	<?php if ($miicard->getPhoneNumbers()): ?>
   	  <dt><?php print t('Phone number:'); ?></dt>
-  	  <dd>+<?php print $miicard['PhoneNumber']['CountryCode'] . ' ' . $miicard['PhoneNumber']['NationalNumber']; ?></dd>
+  	  <dd><?php
+  	    foreach ($miicard->getPhoneNumbers() as $number) {
+          if ($number->getIsPrimary()) {
+    	    print "+{$number->getCountryCode()} {$number->getNationalNumber()}";
+    	    break;
+    	  }
+        }?></dd>
   	<?php endif; ?>
   </dl>
 	
-  <?php if (!empty($miicard['ProfileUrl'])): ?>
-	  <p><a href="<?php print $miicard['ProfileUrl']; ?>">
+  <?php if ($miicard->getProfileUrl()): ?>
+	  <p><a href="<?php print $miicard->getProfileUrl(); ?>">
 	    <?php print t('miiCard Profile'); ?>
 	  </a></p>
 	<?php endif; ?>
   
-  <?php if (!empty($miicard['Identities'])): ?>
+  <?php if ($miicard->getIdentities()): ?>
     <ul>
-      <?php foreach ($miicard['Identities'] as $identity): ?>
-      	<li><a href="<?php print $identity['ProfileUrl']; ?>">
-      	  <?php print $identity['Source']; ?>
+      <?php foreach ($miicard->getIdentities() as $identity): ?>
+      	<li><a href="<?php print $identity->getProfileUrl(); ?>">
+      	  <?php print $identity->getSource(); ?>
       	</a></li>
       <?php endforeach; ?>
     </ul>
-  <?php endif; ?>    
-  
+  <?php endif; ?>
+  <?php endif; ?>
+
 </div>

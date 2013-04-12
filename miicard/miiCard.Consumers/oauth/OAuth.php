@@ -20,6 +20,9 @@ class OAuthConsumer {
   function __toString() {
     return "OAuthConsumer[key=$this->key,secret=$this->secret]";
   }
+
+  public function getKey() { return $this->key; }
+  public function getSecret() { return $this->secret; }
 }
 
 class OAuthToken {
@@ -50,6 +53,9 @@ class OAuthToken {
   function __toString() {
     return $this->to_string();
   }
+
+  public function getKey() { return $this->key; }
+  public function getSecret() { return $this->secret; }
 }
 
 /**
