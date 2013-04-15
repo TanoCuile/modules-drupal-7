@@ -27,6 +27,14 @@ function miicard_menu() {
     'file' => 'miicard.admin.inc',
   );
 
+  $items['user/login/miicard/register'] = array(
+    'title' => 'miiCard registration',
+    'page callback' => 'miicard_register',
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+    'file' => 'miicard.pages.inc',
+  );
+
   $items['user/%user/miicard'] = array(
     'title' => 'miiCard',
     'description' => 'miiCard Identity Assurance',
@@ -168,6 +176,12 @@ function miicard_form_alter(&$form, $form_state, $form_id) {
       $form['miicard'] = array(
         '#markup' => theme('item_list', array('items' => $items)),
       );
+
+      if (isset($_SESSION['miicard_oauth']['miicard_username'])) {
+        $form['#validate'] = array_merge(array('miicard_register_validate'), $form['#validate']);
+        $form['#submit'] = array('miicard_register_submit');
+      }
+
       break;
 
     case 'user_profile_form':
@@ -268,6 +282,12 @@ function _miicard_identity_load($account) {
   return reset($entity);
 }
 
+/**
+ * Update/save local copy of miiCard public data from API
+ *
+ * @param $miicard
+ * A miiCard API class holding the current miiCard public data
+ */
 /**
  * Update/save local copy of miiCard public data from API
  *
@@ -381,7 +401,7 @@ function _miicard_identity_delete($account) {
     $miicard_role = user_role_load_by_name(MIICARD_USER_ROLE);
     $new_roles = array('roles' => $account->roles);
     unset($new_roles['roles'][$miicard_role->rid]);
-    
+
     entity_get_controller('miicard')->resetCache();
     user_save($account, $new_roles);
   }

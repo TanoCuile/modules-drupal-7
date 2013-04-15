@@ -529,6 +529,8 @@
             }
             else
             {
+                echo $this->getConsumerKey() . " secret" .  $this->getConsumerSecret() . " token " . $this->getAccessToken() . " secret " . $this->getAccessTokenSecret();
+
                 $api = new MiiCardOAuthClaimsService($this->getConsumerKey(), $this->getConsumerSecret(), $this->getAccessToken(), $this->getAccessTokenSecret());
                 $response = $api->getClaims();
 
