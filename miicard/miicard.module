@@ -264,8 +264,8 @@ function _miicard_identity_load($account) {
   elseif (is_numeric($account)) {
     $uid = $account;
   }
-
-  return reset(entity_load('miicard', array($uid)));
+  $entity = entity_load('miicard', array($uid));
+  return reset($entity);
 }
 
 /**
@@ -295,7 +295,7 @@ function _miicard_identity_save(&$miicard, $uid) {
             'url' => $profile->getProfileUrl(),
             'username' => $profile->getUsername(),
             'refreshed' => time(),
-            'access_token' => serialize($miicard->getAccessToken()),
+            'access_token' => serialize(array($miicard->getAccessToken(), $miicard->getAccessTokenSecret())),
             'data' => serialize($profile) // Store public profile informtation
           ))
           ->execute();
@@ -453,9 +453,8 @@ function _miicard_update_card($token, $uid) {
 
   $miicard = new miiCard($key, $secret, $token['oauth_token'], $token['oauth_token_secret']);
   $miicard->uid = $uid;
-  $miicard->dictionary_request(TRUE);
 
-  _miicard_identity_save($miicard);
+  _miicard_identity_save($miicard, $uid);
 }
 
 

@@ -106,7 +106,7 @@ function miicard_callback() {
         }
         else {
           // Add new miicard record
-          if (_miicard_identity_save($miicard, $account->uid)) {
+          if (_miicard_identity_save($miicard, $user->uid)) {
             drupal_set_message(t('miiCard added to your account'));
           }
         }
