@@ -542,10 +542,9 @@ function miicard_theme() {
 function theme_miicard($variables) {
   global $user;
   $miicard = _miicard_identity_load($variables['uid']);
-#  $user->data = is_object($miicard) && is_object($miicard->data) ? $miicard->data : NULL;
-  $public = is_object($miicard) && ($user->uid != $variables['uid']);
+  $show = is_object($miicard) && is_object($miicard->data);
 
-  return theme('miicard_template', array('miicard' => $public ? $miicard->data : NULL));
+  return theme('miicard_template', array('miicard' => $show ? $miicard->data : NULL));
 }
 
 /**

@@ -8,6 +8,7 @@
  * Pass user to miiCard to log in.
  */
 function miicard_redirect() {
+
   if (!isset($_SESSION)) {
     drupal_session_start();
   }
