@@ -8,6 +8,10 @@
  * Pass user to miiCard to log in.
  */
 function miicard_redirect() {
+  if (!isset($_SESSION)) {
+    drupal_session_start();
+  }
+
   $key = variable_get('miicard_consumer_key', '');
   $secret = variable_get('miicard_consumer_secret', '');
   $miicard = new MiiCard($key, $secret);
