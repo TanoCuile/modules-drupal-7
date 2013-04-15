@@ -330,7 +330,7 @@ function _miicard_identity_save(&$miicard, $uid) {
 
     // Add or remove user from miiCard role based on Identity Assured
     $miicard_role = user_role_load_by_name(MIICARD_USER_ROLE);
-    $new_roles = NULL;
+    $new_roles = array();
     if ($miicard_role) { // If miiCard Role exists
       if ($profile->getIdentityAssured()) {
         if (!in_array(MIICARD_USER_ROLE, $account->roles)) {
@@ -377,9 +377,13 @@ function _miicard_identity_delete($account) {
       watchdog_exception('miicard', $e);
       throw $e;
     }
-
+    // Remove miiCard user role
+    $miicard_role = user_role_load_by_name(MIICARD_USER_ROLE);
+    $new_roles = array('roles' => $account->roles);
+    unset($new_roles['roles'][$miicard_role->rid]);
+    
     entity_get_controller('miicard')->resetCache();
-    user_save($account);
+    user_save($account, $new_roles);
   }
 }
 
@@ -538,10 +542,10 @@ function miicard_theme() {
 function theme_miicard($variables) {
   global $user;
   $miicard = _miicard_identity_load($variables['uid']);
-  $user->data = is_object($miicard) && is_object($miicard->data) ? $miicard->data : NULL;
-  $public = ($user->uid != $variables['uid']);
+#  $user->data = is_object($miicard) && is_object($miicard->data) ? $miicard->data : NULL;
+  $public = is_object($miicard) && ($user->uid != $variables['uid']);
 
-  return theme('miicard_template', array('miicard' => $user->data));
+  return theme('miicard_template', array('miicard' => $public ? $miicard->data : NULL));
 }
 
 /**
@@ -555,9 +559,9 @@ function miicard_preprocess_author_pane(&$variables) {
  * Add miiCard verification status to author information if available
  */
 function miicard_preprocess_node(&$variables) {
-  $user = _miicard_identity_load($variables['uid']);
-  if ($user) {
-    $profile = $user->data;
+  $miicard = _miicard_identity_load($variables['uid']);
+  if ($miicard) {
+    $profile = $miicard->data;
     if (is_object($profile)) {
       $variables['submitted'] = 'Submitted by ' . $variables['name'] . ' (miiCard Identity ' . ($profile->getIdentityAssured() ? '' : 'NOT ') . 'Assured) on ' . $variables['date'];
     }

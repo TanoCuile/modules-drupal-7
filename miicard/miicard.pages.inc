@@ -102,6 +102,8 @@ function miicard_callback() {
 
             $form_state['uid'] = $account->uid;
             user_login_submit(array(), $form_state);
+            $redirect = "user/"; // Redirect to new profile page
+            drupal_set_message(t('miiCard already associated. Switched to user ') . $account->name);
           }
         }
         else {
@@ -143,7 +145,8 @@ function _miicard_load_user(&$profile) {
 
     if (isset($result['miicard'])) {
       $card_ids = array_keys($result['miicard']);
-      $card = reset(entity_load('miicard', $card_ids));
+      $entity = entity_load('miicard', $card_ids);
+      $card = reset($entity);
       $uid = $card->uid;
     }
   }
