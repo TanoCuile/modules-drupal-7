@@ -8,7 +8,7 @@
 
 define('MIICARD_OAUTH', 'https://sts.miicard.com/auth/OAuth.ashx');
 define('MIICARD_API', 'https://sts.miicard.com/api/v1/Claims.svc/json/GetClaims');
-define('MIICARD_ADD_LINK', 'Add miiCard');
+define('MIICARD_ADD_LINK', 'Verify your identity with miiCard');
 define('MIICARD_SIGN_IN_LINK', 'Sign in with miiCard');
 define('MIICARD_REMOVE_LINK', 'Remove link with miiCard');
 define('MIICARD_USER_ROLE', 'miiCard Verified');
@@ -615,9 +615,10 @@ function miicard_view_identity($account) {
   }
 
   if (empty($miicard) && ($user->uid == $account->uid)) {
+    $output .= "<p>miiCard proves your identity to the same level as a passport or driver's licence purely online.</p>";
     $output .= '<p>' . l(t(miicard_add_link_text()), 'user/login/miicard') . '</p>';
   }
-  else {
+  else if (empty($miicard)) {
     $output .= "<p>This user hasn't attached a miiCard to their account yet. " . l("What is miiCard?", "http://www.miicard.com/how-it-works", array('attributes' => array('target' => '_blank'))) . "</p>";
   }
 
