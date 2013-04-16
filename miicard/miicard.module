@@ -13,7 +13,14 @@ define('MIICARD_SIGN_IN_LINK', 'Sign in with miiCard');
 define('MIICARD_REMOVE_LINK', 'Remove link with miiCard');
 define('MIICARD_USER_ROLE', 'miiCard Verified');
 define('MIICARD_ALLOW_CREATE_ACCOUNTS', true);
+define('MIICARD_HIGHLIGHT_APPROVED_USERS', true);
 
+/**
+ * Implements hook_init().
+ */
+function miicard_init() {
+  drupal_add_css(drupal_get_path('module', 'miicard') . '/miicard.css');
+}
 
 /**
  * Implements hook_menu().
@@ -659,11 +666,30 @@ function miicard_preprocess_author_pane(&$variables) {
  * Add miiCard verification status to author information if available
  */
 function miicard_preprocess_node(&$variables) {
-  $miicard = _miicard_identity_load($variables['uid']);
-  if ($miicard) {
-    $profile = $miicard->data;
-    if (is_object($profile)) {
-      $variables['submitted'] = 'Submitted by ' . $variables['name'] . ' (miiCard Identity ' . ($profile->getIdentityAssured() ? '' : 'NOT ') . 'Assured) on ' . $variables['date'];
+  if (variable_get('miicard_highlight_approved_users', false)) {
+    $miicard = _miicard_identity_load($variables['uid']);
+    if ($miicard) {
+      $profile = $miicard->data;
+      if (is_object($profile) && $profile->getIdentityAssured()) {
+        $variables['submitted'] = 'Submitted by ' . $variables['name'] . ' <span class="miicard-verified" title="Identity Assured by miiCard">(Identity Assured by miiCard)</span> on ' . $variables['date'];
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_comment_view
+ * Adds miiCard verification status information for theming
+ */
+function miicard_comment_view($comment, $view_mode, $langcode) {
+  $comment->verified_author = false;
+  if (variable_get('miicard_highlight_approved_users', false)) {
+    $miicard = _miicard_identity_load($comment->uid);
+    if ($miicard) {
+      $profile = $miicard->data;
+      if (is_object($profile) && $profile->getIdentityAssured()) {
+        $comment->verified_author = true;
+      }
     }
   }
 }
@@ -715,4 +741,13 @@ function miicard_remove() {
   }
 
   drupal_goto('user/' . $user->uid . '/edit');
+}
+
+function miicard_attribution($comment) {
+  if ($comment && $comment->verified_author) {
+    return '<span class="miicard-verified" title="Identity Assured by miiCard">(Identity Assured by miiCard)</span>';
+  }
+  else {
+    return NULL;
+  }
 }

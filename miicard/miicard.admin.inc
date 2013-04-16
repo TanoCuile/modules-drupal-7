@@ -63,6 +63,14 @@ function miicard_admin_settings() {
     );
   }
 
+  $form['miicard_highlight_approved_users'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Highlight miiCard-verified users'),
+    '#default_value' => variable_get('miicard_highlight_approved_users'),
+    '#required' => FALSE,
+    '#description' => 'Shows a small miiCard glyph next to miiCard-linked usernames on contributions to your site.'
+  );
+
   $period = array(
     0 => t('Never'),
     86400 => t('24 hours'),

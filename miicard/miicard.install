@@ -47,6 +47,7 @@ function miicard_install() {
   variable_set('miicard_add_link', MIICARD_ADD_LINK);
   variable_set('miicard_sign_in_link', MIICARD_SIGN_IN_LINK);
   variable_set('miicard_allow_create_accounts', MIICARD_ALLOW_CREATE_ACCOUNTS);
+  variable_set('miicard_highlight_approved_users', MIICARD_HIGHLIGHT_APPROVED_USERS);
 
   // Create a user role for miiCard verified users if it doesn't exist
   if (!user_role_load_by_name(MIICARD_USER_ROLE)) {
@@ -74,6 +75,8 @@ function miicard_uninstall() {
   variable_del('miicard_profile_fields');
   variable_del('miicard_remove_link');
   variable_del('miicard_allow_create_accounts');
+  variable_del('miicard_auto_approve_accounts');
+  variable_del('miicard_highlight_approved_users');
 }
 
 /**
