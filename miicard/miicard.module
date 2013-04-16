@@ -353,14 +353,6 @@ function miicard_button($text = '') {
 }
 
 /**
- * Get miiCard URL.
- */
-function miicard_url($uid) {
-  $miicard = _miicard_identity_load($uid);
-  return !$miicard ? '' : $miicard->url;
-}
-
-/**
  * Load associated miiCard data.
  */
 function _miicard_identity_load($account) {
@@ -619,7 +611,7 @@ function miicard_view_identity($account) {
     $output .= '<p>' . l(t(miicard_add_link_text()), 'user/login/miicard') . '</p>';
   }
   else if (empty($miicard)) {
-    $output .= "<p>This user hasn't attached a miiCard to their account yet. " . l("What is miiCard?", "http://www.miicard.com/how-it-works", array('attributes' => array('target' => '_blank'))) . "</p>";
+    $output .= "<p>This user hasn't attached a miiCard to their account yet. " . l("What is miiCard?", miicard_url("http://www.miicard.com/how-it-works"), array('attributes' => array('target' => '_blank'))) . "</p>";
   }
 
   return $output;
@@ -767,5 +759,22 @@ function miicard_attribution($comment) {
   }
   else {
     return NULL;
+  }
+}
+
+/**
+ * Returns a URL to miiCard.com that includes configured affiliate info.
+ */
+function miicard_url($url) {
+  if (variable_get('miicard_affiliate_code', NULL)) {
+    if (strpos($url, '?')){
+      return $url . "&refCode=" . variable_get('miicard_affiliate_code', NULL);
+    }
+    else {
+      return $url . "?refCode=" . variable_get('miicard_affiliate_code', NULL);
+    }
+  }
+  else {
+    return $url;
   }
 }

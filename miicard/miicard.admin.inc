@@ -28,6 +28,14 @@ function miicard_admin_settings() {
     '#required' => TRUE,
   );
 
+  $form['miicard_affiliate_code'] = array(
+    '#type' => 'textfield',
+    '#title' => t('miiCard Affiliate Code'),
+    '#default_value' => variable_get('miicard_affiliate_code', ''),
+    '#required' => FALSE,
+    '#description' => 'Your miiCard affiliate code, if you are part of the miiCard affiliate programme. When set, URLs to miiCard.com created via the miicard_url function will contain your affiliate code so that new signups resulting from referrals from your site are recorded properly. Find out more at <a href="http://www.miicard.com/developers/affiliate-codes" target="_blank">http://www.miicard.com/developers/affiliate-codes</a>.',
+  );
+
   $form['miicard_add_link'] = array(
     '#type' => 'textfield',
     '#title' => t('Add miiCard link text'),

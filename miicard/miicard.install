@@ -77,6 +77,7 @@ function miicard_uninstall() {
   variable_del('miicard_allow_create_accounts');
   variable_del('miicard_auto_approve_accounts');
   variable_del('miicard_highlight_approved_users');
+  variable_del('miicard_affiliate_code');
 }
 
 /**

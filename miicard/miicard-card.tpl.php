@@ -12,10 +12,12 @@
   <?php if ($miicard):?>
   <h3><?php print "{$miicard->getFirstName()} {$miicard->getLastName()}"; ?></h3>
   <?php if ($miicard->getCardImageUrl() && $miicard->getHasPublicProfile()): ?>
-  	<img class="miicard-image" alt="<?php print t('miiCard image');?>" src="<?php print $miicard->getCardImageUrl(); ?>" />  
+  <a href="<?php print miicard_url($miicard->getProfileUrl()); ?>" target="_blank">
+  	<img class="miicard-image" alt="<?php print t('miiCard image');?>" src="<?php print $miicard->getCardImageUrl(); ?>" />
+  </a>
   <?php endif; ?>
 	<?php if ($miicard->getIdentityAssured()): ?>
-  	<p class="assured"><?php print t("This user has verified their identity by attaching a miiCard to their account. ") . l("What is miiCard?", "http://www.miicard.com/how-it-works", array('attributes' => array('target' => '_blank'))); ?></p>
+  	<p class="assured"><?php print t("This user has verified their identity by attaching a miiCard to their account. ") . l("What is miiCard?", miicard_url("http://www.miicard.com/how-it-works"), array('attributes' => array('target' => '_blank'))); ?></p>
   <?php else: ?>
     <p class="not-assured"><?php print t("Identity NOT assured!"); ?></p>
   <?php endif; ?>
@@ -55,7 +57,7 @@
   </dl>
 	
   <?php if ($miicard->getProfileUrl() && $miicard->getHasPublicProfile()): ?>
-	  <p><a href="<?php print $miicard->getProfileUrl(); ?>" target="_blank">
+	  <p><a href="<?php print miicard_url($miicard->getProfileUrl()); ?>" target="_blank">
 	    <?php print t('Visit miiCard Profile'); ?>
 	  </a></p>
 	<?php endif; ?>
