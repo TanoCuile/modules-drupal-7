@@ -617,6 +617,9 @@ function miicard_view_identity($account) {
   if (empty($miicard) && ($user->uid == $account->uid)) {
     $output .= '<p>' . l(t(miicard_add_link_text()), 'user/login/miicard') . '</p>';
   }
+  else {
+    $output .= "<p>This user hasn't attached a miiCard to their account yet. " . l("What is miiCard?", "http://www.miicard.com/how-it-works", array('attributes' => array('target' => '_blank'))) . "</p>";
+  }
 
   return $output;
 }

@@ -69,8 +69,6 @@
       <?php endforeach; ?>
     </ul>
   <?php endif; ?>
-  <?php else: ?>
-  <h3>This user hasn't attached a miiCard to their account yet. <?php print l("What is miiCard?", "http://www.miicard.com/how-it-works", array('attributes' => array('target' => '_blank'))) ?></h3>
   <?php endif; ?>
 
 </div>
