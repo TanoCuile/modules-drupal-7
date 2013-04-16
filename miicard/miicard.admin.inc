@@ -10,6 +10,10 @@
 function miicard_admin_settings() {
   $form = array();
 
+  $form['intro'] = array(
+    '#markup' => t("<p>You will need to sign up for a miiCard developer account to obtain a consumer key and secret. You can request access by filling in the sign-up form at <a href='http://www.miicard.com/developers/getting-started'>http://www.miicard.com/developers/getting-started</a>.</p>"),
+  );
+
   $form['miicard_consumer_key'] = array(
     '#type' => 'textfield',
     '#title' => t('miiCard Consumer Key'),
