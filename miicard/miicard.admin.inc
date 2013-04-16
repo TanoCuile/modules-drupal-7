@@ -3,9 +3,9 @@
  * @file
  * Set up admin page for miiCard
  */
+
 /**
- * Implements hook admin_settings().
- * @return Ambigous <The, string>
+ * Implements hook_admin_settings().
  */
 function miicard_admin_settings() {
   $form = array();
@@ -48,18 +48,18 @@ function miicard_admin_settings() {
   $form['miicard_allow_create_accounts'] = array(
     '#type' => 'checkbox',
     '#title' => t('Allow creation of new accounts via miiCard'),
-    '#default_value' => variable_get('miicard_allow_create_accounts', false),
+    '#default_value' => variable_get('miicard_allow_create_accounts', FALSE),
     '#required' => FALSE,
-    '#description' => 'If set, a new user signing in with their miiCard will be shown the account creation form. If not set, users will have to create an account as normal, then attach a miiCard to it.'
+    '#description' => t('If set, a new user signing in with their miiCard will be shown the account creation form. If not set, users will have to create an account as normal, then attach a miiCard to it.'),
   );
 
   if (variable_get('user_register', USER_REGISTER_VISITORS_ADMINISTRATIVE_APPROVAL) == USER_REGISTER_VISITORS_ADMINISTRATIVE_APPROVAL) {
     $form['miicard_auto_approve_accounts'] = array(
       '#type' => 'checkbox',
       '#title' => t('Automatically approve miiCard-created accounts'),
-      '#default_value' => variable_get('miicard_auto_approve_accounts', false),
+      '#default_value' => variable_get('miicard_auto_approve_accounts', FALSE),
       '#required' => FALSE,
-      '#description' => 'If set, accounts created via miiCard will be automatically approved without requiring administrator intervention but only if they use an email address that has been verified by miiCard.'
+      '#description' => t('If set, accounts created via miiCard will be automatically approved without requiring administrator intervention but only if they use an email address that has been verified by miiCard.'),
     );
   }
 
@@ -68,7 +68,7 @@ function miicard_admin_settings() {
     '#title' => t('Highlight miiCard-verified users'),
     '#default_value' => variable_get('miicard_highlight_approved_users'),
     '#required' => FALSE,
-    '#description' => 'Shows a small miiCard glyph next to miiCard-linked usernames on contributions to your site.'
+    '#description' => 'Shows a small miiCard glyph next to miiCard-linked usernames on contributions to your site.',
   );
 
   $period = array(
