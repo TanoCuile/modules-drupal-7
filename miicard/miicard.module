@@ -193,9 +193,14 @@ function _miicard_register_submit($form, $form_state = array()) {
 
 function _miicard_get_registration_mode_wrapper()
 {
-  $key = variable_get('miicard_consumer_key', '');
-  $secret = variable_get('miicard_consumer_secret', '');
-  $miicard = new MiiCard($key, $secret, $_SESSION['miicard_oauth']['access_token'], $_SESSION['miicard_oauth']['access_token_secret']);
+  $miicard = NULL;
+
+  if (isset($_SESSION['miicard_oauth']) && isset($_SESSION['miicard_oauth']['access_token']) && isset($_SESSION['miicard_oauth']['access_token_secret'])) {
+    $key = variable_get('miicard_consumer_key', '');
+    $secret = variable_get('miicard_consumer_secret', '');
+
+    $miicard = new MiiCard($key, $secret, $_SESSION['miicard_oauth']['access_token'], $_SESSION['miicard_oauth']['access_token_secret']);
+  }
 
   return $miicard;
 }

@@ -28,6 +28,10 @@ function miicard_redirect() {
 
 function miicard_register() {
   $miicard = _miicard_get_registration_mode_wrapper();
+  if ($miicard == NULL) {
+    drupal_set_message('You must sign in with your miiCard before trying to create a new account with one', 'error');
+    drupal_goto();
+  }
 
   $token = $miicard->getAccessToken();
   $tokenSecret = $miicard->getAccessTokenSecret();
