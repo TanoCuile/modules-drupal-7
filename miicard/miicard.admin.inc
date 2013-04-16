@@ -24,20 +24,6 @@ function miicard_admin_settings() {
     '#required' => TRUE,
   );
 
-  $form['miicard_oauth'] = array(
-    '#type' => 'textfield',
-    '#title' => t('miiCard OAuth Endpoint'),
-    '#default_value' => variable_get('miicard_oauth', MIICARD_OAUTH),
-    '#required' => TRUE,
-  );
-
-  $form['miicard_api'] = array(
-    '#type' => 'textfield',
-    '#title' => t('miiCard API Endpoint'),
-    '#default_value' => variable_get('miicard_api', MIICARD_API),
-    '#required' => TRUE,
-  );
-
   $form['miicard_add_link'] = array(
     '#type' => 'textfield',
     '#title' => t('Add miiCard link text'),
@@ -54,15 +40,31 @@ function miicard_admin_settings() {
 
   $form['miicard_remove_link'] = array(
     '#type' => 'textfield',
-    '#title' => t('Sign in with miiCard link text'),
+    '#title' => t('Remove miiCard link text'),
     '#default_value' => variable_get('miicard_remove_link', MIICARD_REMOVE_LINK),
     '#required' => TRUE,
   );
 
+  $form['miicard_allow_create_accounts'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Allow creation of new accounts via miiCard'),
+    '#default_value' => variable_get('miicard_allow_create_accounts', false),
+    '#required' => FALSE,
+    '#description' => 'If set, a new user signing in with their miiCard will be shown the account creation form. If not set, users will have to create an account as normal, then attach a miiCard to it.'
+  );
+
+  if (variable_get('user_register', USER_REGISTER_VISITORS_ADMINISTRATIVE_APPROVAL) == USER_REGISTER_VISITORS_ADMINISTRATIVE_APPROVAL) {
+    $form['miicard_auto_approve_accounts'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Automatically approve miiCard-created accounts'),
+      '#default_value' => variable_get('miicard_auto_approve_accounts', false),
+      '#required' => FALSE,
+      '#description' => 'If set, accounts created via miiCard will be automatically approved without requiring administrator intervention but only if they use an email address that has been verified by miiCard.'
+    );
+  }
+
   $period = array(
     0 => t('Never'),
-    21600 => t('6 hours'),
-    43200 => t('12 hours'),
     86400 => t('24 hours'),
     172800 => t('2 days'),
     604800 => t('1 week'),
@@ -71,7 +73,7 @@ function miicard_admin_settings() {
   $form['miicard_refresh_period'] = array(
     '#type' => 'select',
     '#title' => t('Refresh period'),
-    '#description' => t("Refresh users' miiCards on cron"),
+    '#description' => t("The refresh period controls a cron job that periodically updates the miiCard identity information for any miiCard-linked member of your site."),
     '#options' => $period,
     '#default_value' => variable_get('miicard_refresh_period', 0),
   );

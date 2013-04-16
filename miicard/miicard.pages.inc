@@ -43,7 +43,7 @@ function miicard_register() {
     $form = drupal_get_form('user_register_form');
 
     $form['account']['name']['#value'] = empty($form_state['input']['name']) ? $username : $form_state['input']['name'];
-    $form['account']['mail']['#parents'] = array('name');
+    $form['account']['name']['#parents'] = array('name');
     $form['account']['mail']['#value'] = empty($form_state['input']['mail']) ? $email : $form_state['input']['mail'];
     $form['account']['mail']['#parents'] = array('mail');
   }
@@ -109,6 +109,7 @@ function miicard_callback() {
           if (user_is_blocked($account->name))
           {
             drupal_set_message(t('The username %name has not been activated or is blocked.', array('%name' => $account->name)), 'error');
+            $miicard->clearMiiCard();
             drupal_goto();
           }
           else
@@ -117,39 +118,30 @@ function miicard_callback() {
           }
         }
         else {
-          $_SESSION['miicard_oauth']['access_token'] = $token;
-          $_SESSION['miicard_oauth']['access_token_secret'] = $verifier;
+          if (variable_get('miicard_allow_create_accounts', false))
+          {
+            $_SESSION['miicard_oauth']['access_token'] = $token;
+            $_SESSION['miicard_oauth']['access_token_secret'] = $verifier;
 
-          $emails = $profile->getEmailAddresses();
+            $emails = $profile->getEmailAddresses();
 
-          if ($emails != NULL && count($emails) > 0){
-            $email = $emails[0];
-            $_SESSION['miicard_oauth']['miicard_email'] = $email->getAddress();
-          }
-          else {
-            $_SESSION['miicard_oauth']['miicard_email'] = null;
-          }
-
-          $_SESSION['miicard_oauth']['miicard_username'] = $profile->getUsername();
-
-          drupal_goto('user/login/miicard/register');
-        }
-        /*
-          // Register user
-          $username = _miicard_generate_username($profile);
-          if (empty($username)) {
-            drupal_set_message(t('Could not register new user, please log in or register first'), 'warning');
-            $redirect = 'user';
-          }
-          else {
-            user_external_login_register($username, 'miicard');
-            $account = user_external_load($username);
-            if ($account) {
-              _miicard_identity_save($miicard, $account->uid);
+            if ($emails != NULL && count($emails) > 0){
+              $email = $emails[0];
+              $_SESSION['miicard_oauth']['miicard_email'] = $email->getAddress();
             }
+            else {
+              $_SESSION['miicard_oauth']['miicard_email'] = null;
+            }
+
+            $_SESSION['miicard_oauth']['miicard_username'] = $profile->getUsername();
+
+            drupal_goto('user/login/miicard/register');
+          }
+          else {
+            drupal_set_message('You don\'t appear to have linked your miiCard to an existing account - you must first create an account normally, then link your miiCard to it on your profile page.', 'error');
+            $miicard->clearMiiCard();
           }
         }
-        */
       }
       else {
         if ($account->uid) {
@@ -177,6 +169,7 @@ function miicard_callback() {
     else {
       // Something has gone wrong, report to user
       drupal_set_message(t('Failed to login with miiCard'), 'error');
+      $miicard->clearMiiCard();
     }
   }
 

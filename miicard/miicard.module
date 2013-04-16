@@ -12,6 +12,7 @@ define('MIICARD_ADD_LINK', 'Add miiCard');
 define('MIICARD_SIGN_IN_LINK', 'Sign in with miiCard');
 define('MIICARD_REMOVE_LINK', 'Remove link with miiCard');
 define('MIICARD_USER_ROLE', 'miiCard Verified');
+define('MIICARD_ALLOW_CREATE_ACCOUNTS', true);
 
 
 /**
@@ -32,17 +33,6 @@ function miicard_menu() {
     'page callback' => 'miicard_register',
     'access callback' => TRUE,
     'type' => MENU_CALLBACK,
-    'file' => 'miicard.pages.inc',
-  );
-
-  $items['user/%user/miicard'] = array(
-    'title' => 'miiCard',
-    'description' => 'miiCard Identity Assurance',
-    'page callback' => 'miicard_view_identity',
-    'page arguments' => array(1),
-    'access callback' => 'user_view_access',
-    'access arguments' => array(1),
-    'type' => MENU_LOCAL_TASK,
     'file' => 'miicard.pages.inc',
   );
 
@@ -67,6 +57,17 @@ function miicard_menu() {
     'page callback' => 'miicard_remove',
     'access callback' => TRUE,
     'type' => MENU_CALLBACK,
+    'file' => 'miicard.pages.inc',
+  );
+
+  $items['user/%user/miicard'] = array(
+    'title' => 'miiCard',
+    'description' => 'miiCard Identity Assurance',
+    'page callback' => 'miicard_view_identity',
+    'page arguments' => array(1),
+    'access callback' => 'user_view_access',
+    'access arguments' => array(1),
+    'type' => MENU_LOCAL_TASK,
     'file' => 'miicard.pages.inc',
   );
 
@@ -184,6 +185,41 @@ function _miicard_register_submit($form, $form_state = array()) {
   $uid = $form_state['values']['uid'];
   if ($uid && $token != NULL && $tokenSecret != NULL) {
     _miicard_identity_save($miicard, $uid);
+
+    // Mark the user as approved if we've been configured to do so
+    $account = user_load($uid);
+    $canAutoApprove = variable_get('miicard_auto_approve_accounts', FALSE);
+    $miicarduser = _miicard_identity_load($account);
+    $data = $miicarduser->data;
+    $validatedEmail = false;
+
+    if ($data) {
+      $emails = $data->getEmailAddresses();
+      $userEmail = $account->mail;
+      if ($emails && count($emails)) {
+        foreach ($emails as $miiCardEmail) {
+          if ($userEmail == $miiCardEmail->getAddress()) {
+            $validatedEmail = true;
+          }
+        }
+      }
+    }
+
+    if ($account && !$account->status && $canAutoApprove && $validatedEmail) {
+      $account->status = 1;
+      user_save($account);
+
+      // Clear out messages, as we'll otherwise have an incorrect 'waiting for approval' message
+      // in the list
+      drupal_get_messages('status');
+
+      drupal_set_message(t('Registration successful. You are now logged in.'));
+
+      $form_state['uid'] = $account->uid;
+      user_login_submit(array(), $form_state);
+      drupal_goto();
+    }
+
     $_SESSION['miicard_oauth'] = array();
   }
   else {
@@ -216,7 +252,7 @@ function miicard_form_alter(&$form, $form_state, $form_id) {
       $items = array();
       $items[] = miicard_button();
 
-      if (isset($_SESSION['miicard_oauth']['miicard_username'])) {
+      if (isset($_SESSION['miicard_oauth']['miicard_username']) && current_path() == 'user/login/miicard/register') {
         $form['#validate'] = array_merge(array('_miicard_register_validate'), $form['#validate']);
         $form['#submit'] = array_merge($form['#submit'], array('_miicard_register_submit'));
       }
@@ -661,17 +697,6 @@ function _miicard_load_user(&$profile) {
   }
 
   return user_load($uid);
-}
-
-/**
- * Generate a username from the card profile in the form username@miicard.com
- *
- * @param $profile
- * The miiCard profile of the current user
- */
-function _miicard_generate_username(&$profile) {
-  $name = $profile->getUsername();
-  return $name . '@miicard.com';
 }
 
 /**
