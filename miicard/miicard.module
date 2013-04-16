@@ -162,6 +162,44 @@ function miicard_user_presave(&$edit, $account, $category) {
   }
 }
 
+function _miicard_register_validate($form, &$form_state = array()){
+  $miicard = _miicard_get_registration_mode_wrapper();
+
+  $token = $miicard->getAccessToken();
+  $tokenSecret = $miicard->getAccessTokenSecret();
+
+  if ($token == NULL || $tokenSecret == NULL)
+  {
+    drupal_set_message(t('You don\'t seem to have signed in with miiCard - click ~here~ to sign in first', array('~here~' => l(MIICARD_SIGN_IN_LINK, 'user/login/miicard'))));
+    drupal_goto();
+  }
+}
+
+function _miicard_register_submit($form, $form_state = array()) {
+  $miicard = _miicard_get_registration_mode_wrapper();
+
+  $token = $miicard->getAccessToken();
+  $tokenSecret = $miicard->getAccessTokenSecret();
+
+  $uid = $form_state['values']['uid'];
+  if ($uid && $token != NULL && $tokenSecret != NULL) {
+    _miicard_identity_save($miicard, $uid);
+    $_SESSION['miicard_oauth'] = array();
+  }
+  else {
+    drupal_set_message("There was a problem connecting your miiCard to your new account", 'error');
+  }
+}
+
+function _miicard_get_registration_mode_wrapper()
+{
+  $key = variable_get('miicard_consumer_key', '');
+  $secret = variable_get('miicard_consumer_secret', '');
+  $miicard = new MiiCard($key, $secret, $_SESSION['miicard_oauth']['access_token'], $_SESSION['miicard_oauth']['access_token_secret']);
+
+  return $miicard;
+}
+
 /**
  * Implements hook_form_alter().
  */
@@ -173,13 +211,15 @@ function miicard_form_alter(&$form, $form_state, $form_id) {
       $items = array();
       $items[] = miicard_button();
 
-      $form['miicard'] = array(
-        '#markup' => theme('item_list', array('items' => $items)),
-      );
-
       if (isset($_SESSION['miicard_oauth']['miicard_username'])) {
-        $form['#validate'] = array_merge(array('miicard_register_validate'), $form['#validate']);
-        $form['#submit'] = array('miicard_register_submit');
+        $form['#validate'] = array_merge(array('_miicard_register_validate'), $form['#validate']);
+        $form['#submit'] = array_merge($form['#submit'], array('_miicard_register_submit'));
+      }
+      else
+      {
+        $form['miicard'] = array(
+          '#markup' => theme('item_list', array('items' => $items)),
+        );
       }
 
       break;
@@ -585,4 +625,64 @@ function miicard_preprocess_node(&$variables) {
       $variables['submitted'] = 'Submitted by ' . $variables['name'] . ' (miiCard Identity ' . ($profile->getIdentityAssured() ? '' : 'NOT ') . 'Assured) on ' . $variables['date'];
     }
   }
+}
+
+/**
+ * Load Drupal user from miiCard class
+ *
+ * @param $profile
+ * The miiCard profile of the current user
+ */
+function _miicard_load_user(&$profile) {
+  $uid = 0;
+  // No way to persist $uid in miiCard API so set it to zero
+  // for now but leave code so we can change this in future.
+//  $uid = $profile->getIdentity()->getUserId();
+
+  if ($uid == 0) {
+    $query = new EntityFieldQuery();
+    $query->entityCondition('entity_type', 'miicard')
+          ->propertyCondition('username', $profile->getUsername())
+          ->range(0, 1)
+          ->addMetaData('account', user_load(1));
+    $result = $query->execute();
+
+    if (isset($result['miicard'])) {
+      $card_ids = array_keys($result['miicard']);
+      $entity = entity_load('miicard', $card_ids);
+      $card = reset($entity);
+      $uid = $card->uid;
+    }
+  }
+
+  return user_load($uid);
+}
+
+/**
+ * Generate a username from the card profile in the form username@miicard.com
+ *
+ * @param $profile
+ * The miiCard profile of the current user
+ */
+function _miicard_generate_username(&$profile) {
+  $name = $profile->getUsername();
+  return $name . '@miicard.com';
+}
+
+/**
+ * Remove miiCard identity associated with user
+ */
+function miicard_remove() {
+  global $user;
+
+  _miicard_identity_delete($user);
+  $miicard = _miicard_identity_load($user);
+  if (empty($miicard)) {
+    drupal_set_message(t('miiCard identity removed'));
+  }
+  else {
+    drupal_set_message(t('Could not remove miiCard identity!'), 'error');
+  }
+
+  drupal_goto('user/' . $user->uid . '/edit');
 }

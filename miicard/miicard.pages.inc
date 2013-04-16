@@ -8,7 +8,6 @@
  * Pass user to miiCard to log in.
  */
 function miicard_redirect() {
-
   if (!isset($_SESSION)) {
     drupal_session_start();
   }
@@ -16,6 +15,8 @@ function miicard_redirect() {
   $key = variable_get('miicard_consumer_key', '');
   $secret = variable_get('miicard_consumer_secret', '');
   $miicard = new MiiCard($key, $secret);
+
+  $_SESSION['miicard_oauth'] = array();
 
   // Record where we got here from
   $_SESSION['miicard_oauth']['destination'] = $_SERVER['HTTP_REFERER'];
@@ -47,50 +48,6 @@ function miicard_register() {
   $form['#submit'][] = 'miicard_register_submit';
 
   return $form;
-}
-
-function miicard_register_submit($form, $form_state = array()) {
-  $miicard = _miicard_get_registration_mode_wrapper();
-  $redirect = isset($_SESSION['miicard_oauth']['destination'])
-          ? $_SESSION['miicard_oauth']['destination']
-          : url('user/login', array('absolute' => TRUE));
-
-  $token = $miicard->getAccessToken();
-  $tokenSecret = $miicard->getAccessTokenSecret();
-
-  $user = user_save(NULL, $form_state['values']);
-  if ($user) {
-    _miicard_identity_save($miicard, $user->uid);
-    $form_state['uid'] = $user->uid;
-    user_login_submit(array(), $form_state);
-
-    drupal_goto($redirect);
-  }
-  else {
-    drupal_set_error("There was a problem creating a new account");
-  }
-}
-
-function miicard_register_validate($form, &$form_state = array()){
-  $miicard = _miicard_get_registration_mode_wrapper();
-
-  $token = $miicard->getAccessToken();
-  $tokenSecret = $miicard->getAccessTokenSecret();
-
-  if ($token == NULL || $tokenSecret == NULL)
-  {
-    drupal_set_message(t('You don\'t seem to have signed in with miiCard - click ~here~ to sign in first', array('~here~' => l(MIICARD_SIGN_IN_LINK, 'user/login/miicard'))));
-    drupal_goto();
-  }
-}
-
-function _miicard_get_registration_mode_wrapper()
-{
-  $key = variable_get('miicard_consumer_key', '');
-  $secret = variable_get('miicard_consumer_secret', '');
-  $miicard = new MiiCard($key, $secret, $_SESSION['miicard_oauth']['access_token'], $_SESSION['miicard_oauth']['access_token_secret']);
-
-  return $miicard;
 }
 
 /**
@@ -144,7 +101,16 @@ function miicard_callback() {
           _miicard_identity_save($miicard, $account->uid);
 
           $form_state['uid'] = $account->uid;
-          user_login_submit(array(), $form_state);
+
+          if (user_is_blocked($account->name))
+          {
+            drupal_set_message(t('The username %name has not been activated or is blocked.', array('%name' => $account->name)), 'error');
+            drupal_goto();
+          }
+          else
+          {
+            user_login_submit(array(), $form_state);
+          }
         }
         else {
           $_SESSION['miicard_oauth']['access_token'] = $token;
@@ -211,64 +177,4 @@ function miicard_callback() {
   }
 
   drupal_goto($redirect);
-}
-
-/**
- * Load Drupal user from miiCard class
- *
- * @param $profile
- * The miiCard profile of the current user
- */
-function _miicard_load_user(&$profile) {
-  $uid = 0;
-  // No way to persist $uid in miiCard API so set it to zero
-  // for now but leave code so we can change this in future.
-//  $uid = $profile->getIdentity()->getUserId();
-
-  if ($uid == 0) {
-    $query = new EntityFieldQuery();
-    $query->entityCondition('entity_type', 'miicard')
-          ->propertyCondition('username', $profile->getUsername())
-          ->range(0, 1)
-          ->addMetaData('account', user_load(1));
-    $result = $query->execute();
-
-    if (isset($result['miicard'])) {
-      $card_ids = array_keys($result['miicard']);
-      $entity = entity_load('miicard', $card_ids);
-      $card = reset($entity);
-      $uid = $card->uid;
-    }
-  }
-
-  return user_load($uid);
-}
-
-/**
- * Generate a username from the card profile in the form username@miicard.com
- *
- * @param $profile
- * The miiCard profile of the current user
- */
-function _miicard_generate_username(&$profile) {
-  $name = $profile->getUsername();
-  return $name . '@miicard.com';
-}
-
-/**
- * Remove miiCard identity associated with user
- */
-function miicard_remove() {
-  global $user;
-
-  _miicard_identity_delete($user);
-  $miicard = _miicard_identity_load($user);
-  if (empty($miicard)) {
-    drupal_set_message(t('miiCard identity removed'));
-  }
-  else {
-    drupal_set_message(t('Could not remove miiCard identity!'), 'error');
-  }
-
-  drupal_goto('user/' . $user->uid . '/edit');
 }
