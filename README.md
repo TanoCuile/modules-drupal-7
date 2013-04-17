@@ -6,8 +6,6 @@ Drupal 7 module to enable 'sign in with miiCard' functionality and provide a bas
 ###What is miiCard?
 miiCard lets anybody prove their identity to the same level of traceability as using a passport, driver's licence or photo ID. We then allow external web applications to ask miiCard users to share a portion of their identity information with the application through a web-accessible API.
 
-You can find a .zip of the module ready for installation into your Drupal site on the [Downloads](https://github.com/miiCard/modules-drupal-7/downloads) tab.
-
 ###What is this Drupal module for?
 This Drupal module is intended to be the basis of an integration of miiCard identity assurance into a Drupal 7-powered site. Out of the box, it supports:
 
@@ -49,6 +47,14 @@ If set, accounts created via miiCard will be automatically marked as approved so
 When set, a small green tick glyph is shown next to the user's username in the byline of any posts or articles the user makes - so long as their identity remains assured by miiCard.
 
 This also enables the miicard_attribution function, which you can use in templates - supply it with a comment object and it will mark up the username of the commenter in the same way.
+
+#### Affiliate code
+If you have a miiCard affiliate code, you can enter it in the configuration page. This will let miiCard attribute new miiCard members to your site. If an affiliate code is set, you can also use the miicard_url function to build URLs to the miiCard site - these URLs will have your affiliate code appended automatically.
+
+#### Automated identity refresh
+A cron job can pull updated miiCard identity information on a nightly, bi-nightly or weekly schedule. For each user who has linked a miiCard to their site account an attempt to get updated information will be made.
+
+If there's a problem pulling back the user's miiCard information, or if their identity is no longer assured then their profile is updated to reflect that. They'll still be able to log in using the miiCard (at which point updated information will again be pulled down from the miiCard service).
 
 ### Templating
 The miiCard module adds a tab to user profile pages containing some of the information shared by the miiCard member in addition to an assurance about their identity. In the /miicard module folder exist two templates, miicard-card.tpl.php and miicard-image.tpl.php that can be modified to change the set of details shown or how they are formatted.
