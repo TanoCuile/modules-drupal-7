@@ -6,3 +6,12 @@ span.miicard-verified
    width: 36px;
    text-indent: -9999px;
 }
+
+a.miicardLoginButton
+{
+   background: url(images/miicard_login.png) no-repeat transparent;
+   display: inline-block;
+   width: 178px;
+   height: 38px;
+   text-indent: -9999px;
+}

@@ -265,16 +265,13 @@ function miicard_form_alter(&$form, $form_state, $form_id) {
     case 'user_login':
     case 'user_login_block':
     case 'user_register_form':
-      $items = array();
-      $items[] = miicard_button();
-
       if (isset($_SESSION['miicard_oauth']['miicard_username']) && current_path() == 'user/login/miicard/register') {
         $form['#validate'] = array_merge(array('_miicard_register_validate'), $form['#validate']);
         $form['#submit'] = array_merge($form['#submit'], array('_miicard_register_submit'));
       }
       else {
-        $form['miicard'] = array(
-          '#markup' => theme('item_list', array('items' => $items)),
+        $form['actions']['miicard'] = array(
+          '#markup' => miicard_button(),
         );
       }
 
@@ -316,8 +313,7 @@ function miicard_block_view($delta) {
     case 'miicard_signin':
       if (!$user->uid) {
         $block['subject'] = '';
-        $items[] = miicard_button();
-        $block['content'] = theme('item_list', array('items' => $items));
+        $block['content'] = miicard_button();
         return $block;
       }
       break;
