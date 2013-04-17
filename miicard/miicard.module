@@ -385,7 +385,7 @@ function _miicard_identity_save_profile($profile, $access_token, $access_token_s
           ->fields(array(
             'access_token' => serialize(array()),
             'refreshed' => time(),
-            'data' => NULL
+            'data' => NULL,
           ))
           ->execute();
       }
@@ -506,6 +506,12 @@ function _miicard_identity_delete($account) {
   }
 }
 
+/**
+ * Implements hook_cron().
+ *
+ * Queues up a pull of fresh miiCard data for all users whose last data update
+ * was less than the value configured by the miicard_refresh_period variable.
+ */
 function miicard_cron() {
   if (variable_get('miicard_refresh_period', 0)) {
     $age = time() - variable_get('miicard_refresh_period', 60 * 60 * 24);
@@ -522,15 +528,24 @@ function miicard_cron() {
   }
 }
 
+/**
+ * Implements hook_cron_queue_info().
+ */
 function miicard_cron_queue_info() {
   $queues['miicard_refresh'] = array(
     'worker callback' => 'miicard_refresh_identity_data',
-    'time' => 30
+    'time' => 30,
   );
 
   return $queues;
 }
 
+/**
+ * Updates a miiCard-linked user's data from miiCard.
+ *
+ * Pulls latest data from the miiCard service, using the tokens in the
+ * supplied miicard table row.
+ */
 function miicard_refresh_identity_data($row) {
   _miicard_update_card(unserialize($row->access_token), $row->uid);
 
@@ -596,7 +611,8 @@ function _miicard_update_card($token, $uid) {
   }
 
   if ($claims_response == NULL || $claims_response->getErrorCode() != MiiApiErrorCode::SUCCESS) {
-    // Remove the tokens from the profile (but keep the miiCard link so the user can sign in again).
+    // Remove the tokens from the profile, but keep the miiCard link so the user
+    // can sign in again.
     db_update('miicard')
       ->condition('uid', $uid)
       ->fields(array(
@@ -657,8 +673,10 @@ function miicard_view_identity($account) {
     $output .= "<p>miiCard proves your identity to the same level as a passport or driver's licence purely online.</p>";
     $output .= '<p>' . l(t(miicard_add_link_text()), 'user/login/miicard') . '</p>';
   }
-  else if (empty($miicard)) {
-    $output .= "<p>This user hasn't attached a miiCard to their account yet. " . l("What is miiCard?", miicard_url("http://www.miicard.com/how-it-works"), array('attributes' => array('target' => '_blank'))) . "</p>";
+  elseif (empty($miicard)) {
+    $output .= "<p>This user hasn't attached a miiCard to their account yet. ";
+    $output .= l(t("What is miiCard?"), miicard_url("http://www.miicard.com/how-it-works"), array('attributes' => array('target' => '_blank')));
+    $output .= "</p>";
   }
 
   return $output;
@@ -814,7 +832,7 @@ function miicard_attribution($comment) {
  */
 function miicard_url($url) {
   if (variable_get('miicard_affiliate_code', NULL)) {
-    if (strpos($url, '?')){
+    if (strpos($url, '?')) {
       return $url . "&refCode=" . variable_get('miicard_affiliate_code', NULL);
     }
     else {

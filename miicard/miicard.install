@@ -49,13 +49,14 @@ function miicard_install() {
   variable_set('miicard_allow_create_accounts', MIICARD_ALLOW_CREATE_ACCOUNTS);
   variable_set('miicard_highlight_approved_users', MIICARD_HIGHLIGHT_APPROVED_USERS);
 
-  // Create a user role for miiCard verified users if it doesn't exist
+  // Create a user role for miiCard verified users if it doesn't exist.
   if (!user_role_load_by_name(MIICARD_USER_ROLE)) {
     $role = new stdClass();
     $role->name = MIICARD_USER_ROLE;
     user_role_save($role);
   }
 
+  // Create the cron queue onto which we'll push users needing data updates.
   $queue = DrupalQueue::get('miicard_refresh');
   $queue->createQueue();
 }
