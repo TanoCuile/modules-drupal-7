@@ -153,13 +153,13 @@ function miicard_callback() {
           }
           else {
             /*
-            miiCard already registered to another user so update their miiCard
-            details and login as that user
+            miiCard already registered to another user, so change that
+            registration.
             */
-            _miicard_identity_save($miicard, $account->uid);
+            _miicard_identity_delete($account);
+            _miicard_identity_save($miicard, $user->uid);
 
-            $form_state['uid'] = $account->uid;
-            user_login_submit(array(), $form_state);
+            drupal_set_message(t('Removed miiCard from existing account :old and added to your account, :new', array(':old' => $account->name, ':new' => $user->name)));
           }
         }
         else {
