@@ -276,17 +276,6 @@ function miicard_form_alter(&$form, $form_state, $form_id) {
       }
 
       break;
-
-    case 'user_profile_form':
-      global $user;
-      if (substr($user->name, -12) != '@miicard.com') {
-        unset($form['account']['pass']);
-
-        unset($form['account']['current_pass']);
-        unset($form['account']['current_pass_required_values']);
-        $form['#validate'] = array_diff($form['#validate'], array('user_validate_current_pass'));
-      }
-      break;
   }
 }
 
