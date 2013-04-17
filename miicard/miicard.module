@@ -500,9 +500,41 @@ function _miicard_identity_delete($account) {
   }
 }
 
+function miicard_cron() {
+  if (variable_get('miicard_refresh_period', 0)) {
+    $age = time() - variable_get('miicard_refresh_period', 60 * 60 * 24);
+    $s = serialize(array());
+
+    $sql = "SELECT * FROM {miicard} WHERE refreshed < :refreshed AND access_token <> '' ORDER BY refreshed, uid ASC";
+    $results = db_query($sql, array(':refreshed' => $age));
+
+    $queue = DrupalQueue::get('miicard_refresh');
+    foreach ($results as $result) {
+      $queue->createItem($result);
+    }
+  }
+}
+
+function miicard_cron_queue_info() {
+  $queues['miicard_refresh'] = array(
+    'worker callback' => 'miicard_refresh_identity_data',
+    'time' => 30
+  );
+
+  return $queues;
+}
+
+function miicard_refresh_identity_data($row) {
+  _miicard_update_card(unserialize($row->access_token), $row->uid);
+
+  // Save the user so any profile or field mappings are updated.
+  $account = user_load($row->uid);
+  user_save($account);
+}
+
 /**
  * Implements hook_cron().
- */
+ *
 function miicard_cron() {
   $interval = variable_get('miicard_refresh_period', 0);
 
@@ -521,6 +553,7 @@ function miicard_cron() {
     }
   }
 }
+*/
 
 /**
  * Batch update miiCard records using miiCard API and stored access tokens.
@@ -566,11 +599,11 @@ function _miicard_refresh() {
  * @param int $uid
  *   The Drupal uid for the user whose miiCard we're updating.
  */
-function _miicard_update_card($token, $token_secret, $uid) {
+function _miicard_update_card($token, $uid) {
   $key = variable_get('miicard_consumer_key', '');
   $secret = variable_get('miicard_consumer_secret', '');
 
-  $miicard = new miiCard($key, $secret, $token['oauth_token'], $token['oauth_token_secret']);
+  $miicard = new MiiCard($key, $secret, $token['oauth_token'], $token['oauth_token_secret']);
   $miicard->uid = $uid;
 
   _miicard_identity_save($miicard, $uid);

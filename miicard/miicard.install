@@ -55,6 +55,9 @@ function miicard_install() {
     $role->name = MIICARD_USER_ROLE;
     user_role_save($role);
   }
+
+  $queue = DrupalQueue::get('miicard_refresh');
+  $queue->createQueue();
 }
 
 /**
@@ -78,6 +81,9 @@ function miicard_uninstall() {
   variable_del('miicard_auto_approve_accounts');
   variable_del('miicard_highlight_approved_users');
   variable_del('miicard_affiliate_code');
+
+  $queue = DrupalQueue::get('miicard_refresh');
+  $queue->deleteQueue();
 }
 
 /**
