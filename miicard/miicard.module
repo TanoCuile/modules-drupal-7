@@ -371,28 +371,21 @@ function _miicard_identity_load($account) {
 }
 
 /**
- * Update/save local copy of miiCard public data from API.
- *
- * @param $miicard
- * A miiCard API class holding the current miiCard public data.
+ * Commits updates to a user profile from its equivalent miiCard profile.
  */
-/**
- * Update/save local copy of miiCard public data from API.
- *
- * @param MiiCard $miicard
- *   A miiCard API class holding the current miiCard public data.
- */
-function _miicard_identity_save(&$miicard, $uid) {
+function _miicard_identity_save_profile($profile, $access_token, $access_token_secret, $uid) {
   $error = FALSE;
-  $profile = $miicard->getUserProfile();
+
   try {
     if ($uid) {
-      if (!$miicard->isAuthorisationSuccess()) {
+      if ($access_token == NULL || $access_token_secret == NULL) {
         // If login expired, revoke access token.
         db_update('miicard')
           ->condition('uid', $uid)
           ->fields(array(
             'access_token' => serialize(array()),
+            'refreshed' => time(),
+            'data' => NULL
           ))
           ->execute();
       }
@@ -403,7 +396,7 @@ function _miicard_identity_save(&$miicard, $uid) {
             'url' => $profile->getProfileUrl(),
             'username' => $profile->getUsername(),
             'refreshed' => time(),
-            'access_token' => serialize(array($miicard->getAccessToken(), $miicard->getAccessTokenSecret())),
+            'access_token' => serialize(array('oauth_token' => $access_token, 'oauth_token_secret' => $access_token_secret)),
             'data' => serialize($profile),
           ))
           ->execute();
@@ -431,7 +424,7 @@ function _miicard_identity_save(&$miicard, $uid) {
     if (empty($account->mail)) {
       $new_mail = NULL;
       foreach ($profile->getEmailAddresses() as $email) {
-        if ($email->getIsPrimary() && $email->getVerified()) {
+        if ($email->getVerified()) {
           $new_mail = $email->getAddress();
           break;
         }
@@ -463,6 +456,19 @@ function _miicard_identity_save(&$miicard, $uid) {
   }
 
   return !$error;
+}
+
+/**
+ * Update/save local copy of miiCard public data from API.
+ *
+ * @param MiiCard $miicard
+ *   A miiCard API class holding the current miiCard public data.
+ */
+function _miicard_identity_save(&$miicard, $uid) {
+  $error = FALSE;
+  $profile = $miicard->getUserProfile();
+
+  return _miicard_identity_save_profile($profile, $miicard->getAccessToken(), $miicard->getAccessTokenSecret(), $uid);
 }
 
 /**
@@ -510,6 +516,7 @@ function miicard_cron() {
 
     $queue = DrupalQueue::get('miicard_refresh');
     foreach ($results as $result) {
+
       $queue->createItem($result);
     }
   }
@@ -531,29 +538,6 @@ function miicard_refresh_identity_data($row) {
   $account = user_load($row->uid);
   user_save($account);
 }
-
-/**
- * Implements hook_cron().
- *
-function miicard_cron() {
-  $interval = variable_get('miicard_refresh_period', 0);
-
-  if ($interval > 0) {
-    $in_batch = variable_get('miicard_in_batch', 0);
-
-    if (!$in_batch) {
-      if ((time() - variable_get('miicard_last_check', 0)) > $interval) {
-        variable_set('miicard_last_check', time());
-        variable_set('miicard_in_batch', 1);
-        _miicard_refresh();
-      }
-    }
-    else {
-      _miicard_refresh();
-    }
-  }
-}
-*/
 
 /**
  * Batch update miiCard records using miiCard API and stored access tokens.
@@ -603,12 +587,42 @@ function _miicard_update_card($token, $uid) {
   $key = variable_get('miicard_consumer_key', '');
   $secret = variable_get('miicard_consumer_secret', '');
 
-  $miicard = new MiiCard($key, $secret, $token['oauth_token'], $token['oauth_token_secret']);
-  $miicard->uid = $uid;
+  $miicard_wrapper = NULL;
+  $claims_response = NULL;
 
-  _miicard_identity_save($miicard, $uid);
+  if (isset($token['oauth_token']) && isset($token['oauth_token_secret'])) {
+    $miicard_wrapper = new MiiCardOAuthClaimsService($key, $secret, $token['oauth_token'], $token['oauth_token_secret']);
+    $claims_response = $miicard_wrapper->getClaims();
+  }
+
+  if ($claims_response == NULL || $claims_response->getErrorCode() != MiiApiErrorCode::SUCCESS) {
+    // Remove the tokens from the profile (but keep the miiCard link so the user can sign in again).
+    db_update('miicard')
+      ->condition('uid', $uid)
+      ->fields(array(
+        'access_token' => serialize(array()),
+        'data' => NULL,
+        'refreshed' => time(),
+      ))
+      ->execute();
+
+    // Add or remove user from miiCard role based on Identity Assured.
+    $miicard_role = user_role_load_by_name(MIICARD_USER_ROLE);
+    $new_roles = array();
+    $account = user_load($uid);
+
+    if ($miicard_role && in_array(MIICARD_USER_ROLE, $account->roles)) {
+      // If not assured but in has role, remove role.
+      $new_roles['roles'] = $account->roles;
+      unset($new_roles['roles'][$miicard_role->rid]);
+      user_save($account);
+    }
+  }
+  else {
+    $profile = $claims_response->getData();
+    _miicard_identity_save_profile($profile, $miicard_wrapper->getAccessToken(), $miicard_wrapper->getAccessTokenSecret(), $uid);
+  }
 }
-
 
 /**
  * Display miiCard public image retrieved through API.
