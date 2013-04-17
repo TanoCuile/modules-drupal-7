@@ -14,7 +14,9 @@ function miicard_redirect() {
 
   $key = variable_get('miicard_consumer_key', '');
   $secret = variable_get('miicard_consumer_secret', '');
-  $miicard = new MiiCard($key, $secret);
+  $affiliate_code = variable_get('miicard_affiliate_code', NULL);
+
+  $miicard = new MiiCard($key, $secret, NULL, NULL, $affiliate_code);
 
   $_SESSION['miicard_oauth'] = array();
 
