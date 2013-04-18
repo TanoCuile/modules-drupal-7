@@ -16,6 +16,11 @@ This Drupal module is intended to be the basis of an integration of miiCard iden
 * Automated updating of miiCard identity assurance information
 * Adds a role, 'miiCard Verified' that can be used for access control
 
+###Installation
+Install the library through the Modules administrative panel as normal. 
+
+**Note** The miiCard Drupal module requires the [Drupal OAuth](http://drupal.org/project/oauth) (formerly 'OAuth Common') module be installed and enabled before use.
+
 ###Configuration
 Once installed, configure the module by going to the Configuration... People... miiCard section of the administative pages. The first two settings you'll need to supply are:
 
@@ -60,9 +65,6 @@ If there's a problem pulling back the user's miiCard information, or if their id
 The miiCard module adds a tab to user profile pages containing some of the information shared by the miiCard member in addition to an assurance about their identity. In the /miicard module folder exist two templates, miicard-card.tpl.php and miicard-image.tpl.php that can be modified to change the set of details shown or how they are formatted.
 
 In addition, when a user attaches a miiCard to an existing account or signs into your site using their miiCard the set of personal information that they have elected to share is stored against the user as a serialised PHP object - you can interrograte this object as required in your own code. This functionality is provided by the miiCard PHP Wrapper Libraries, and a MiiUserProfile object is stored. See the documentation for more information.
-
-###Dependencies
-The module takes a dependency (included) on OAuth.php by Andy Smith, distributed under the MIT License. It also depends upon (and is also bundled with) the miiCard API PHP Wrapper Libraries, distributed under the BSD 3-Clause licence.
 
 ###Licensing
 The module is dual-licenced under the [BSD 3-Clause licence](http://opensource.org/licenses/BSD-3-Clause) and [GPL v2 licences](http://opensource.org/licenses/gpl-2.0.php) to support its provision via Drupal.org. You can choose which licence you wish to govern your use of the module, provided you adhere to all of the clauses in the licence you select. You may be forced to use one or other licence depending on your use case.
