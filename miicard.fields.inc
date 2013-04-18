@@ -406,7 +406,7 @@ function miicard_collection_list($collection, $conversion) {
 /**
  * Build an array of only 'primary' items in the passed collection.
  *
- * @param Array $collection
+ * @param array $collection
  *   The list to be converted
  * @param Function $conversion
  *   How to convert individual items
