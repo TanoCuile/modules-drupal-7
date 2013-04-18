@@ -25,34 +25,36 @@
   <dl>
     <dt><?php print t('Last verified:')?></dt>
     <dd>
-      <?php
-        if ($miicard->getLastVerified()) {
-          print date('j F Y, g:ia', intval($miicard->getLastVerified()));
-        }
-        else {
-          print t('Unknown');
-        }
-      ?>
+      <?php if ($miicard->getLastVerified()): ?>
+        <?php print date('j F Y, g:ia', intval($miicard->getLastVerified())); ?>
+      <?php else: ?>
+        <?php print t('Unknown'); ?>
+      <?php endif; ?>
     </dd>
     <?php if ($miicard->getEmailAddresses()): ?>
       <dt><?php print t('Email address:'); ?></dt>
-      <dd><?php
-        foreach ($miicard->getEmailAddresses() as $address) {
-          if ($address->getIsPrimary()) {
-          print $address->getAddress();
-          break;
-        }
-        }?></dd>
+      <dd>
+      <?php foreach ($miicard->getEmailAddresses() as $address): ?>
+        <?php if ($address->getIsPrimary()): ?>
+          <?php
+            print $address->getAddress();
+            break;
+          ?>
+        <?php endif; ?>
+      <?php endforeach; ?></dd>
     <?php endif; ?>
     <?php if ($miicard->getPhoneNumbers()): ?>
       <dt><?php print t('Phone number:'); ?></dt>
-      <dd><?php
-        foreach ($miicard->getPhoneNumbers() as $number) {
-          if ($number->getIsPrimary()) {
-          print "+{$number->getCountryCode()} {$number->getNationalNumber()}";
-          break;
-        }
-        }?></dd>
+      <dd>
+      <?php foreach ($miicard->getPhoneNumbers() as $number): ?>
+        <?php if ($number->getIsPrimary()): ?>
+          <?php
+            print "+{$number->getCountryCode()} {$number->getNationalNumber()}";
+            break;
+          ?>
+        <?php endif; ?>
+      <?php endforeach; ?>
+      </dd>
     <?php endif; ?>
   </dl>
 
