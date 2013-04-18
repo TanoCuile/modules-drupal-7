@@ -1,7 +1,6 @@
 <?php
 
 /** @package miiCard.Consumers */
-    require_once('oauth/OAuth.php');
     require_once('miiCard.Model.php');
 
     /** Houses the URLs of the OAuth endpoint and Claims API endpoint.
@@ -457,13 +456,13 @@
 
             $requestToken = $this->getRequestToken();
 
-            $this->_accessToken = $requestToken->getKey();
-            $this->_accessTokenSecret = $requestToken->getSecret();
+            $this->_accessToken = $requestToken->key;
+            $this->_accessTokenSecret = $requestToken->secret;
 
             $_SESSION[MiiCard::SESSION_KEY_ACCESS_TOKEN] = $this->getAccessToken();
             $_SESSION[MiiCard::SESSION_KEY_ACCESS_TOKEN_SECRET] = $this->getAccessTokenSecret();
             
-            $redirectUrl = MiiCardServiceUrls::OAUTH_ENDPOINT . "?oauth_token=" . rawurlencode($requestToken->getKey());
+            $redirectUrl = MiiCardServiceUrls::OAUTH_ENDPOINT . "?oauth_token=" . rawurlencode($requestToken->key);
             if (isset($this->_referrerCode) && $this->_referrerCode != null)
             {
                 $redirectUrl .= "&referrer=" . $this->_referrerCode;

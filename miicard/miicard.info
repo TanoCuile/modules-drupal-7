@@ -2,7 +2,7 @@ name = miiCard
 description = Allows users to authenticate against the miiCard service
 package = "Authentication"
 core = 7.x
-version = "7.x-0.6"
+version = "7.x-0.9"
 
 configure = admin/config/people/miicard
 
@@ -10,3 +10,5 @@ files[] = miiCard.Consumers/oauth/OAuth.php
 files[] = miiCard.Consumers/miiCard.Model.php
 files[] = miiCard.Consumers/miiCard.Consumers.php
 files[] = miicard.entity.inc
+
+dependencies[] = oauth_common
