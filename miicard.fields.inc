@@ -385,12 +385,10 @@ function miicard_convert_postal_type($item) {
 /**
  * Build an array of the required field in the passed collection.
  *
- * @param Array $collection
+ * @param array $collection
  *   The list to be converted
  * @param Function $conversion
  *   How to convert individual items
- *
- * @return Array
  */
 function miicard_collection_list($collection, $conversion) {
   $list = array();
@@ -412,8 +410,6 @@ function miicard_collection_list($collection, $conversion) {
  *   The list to be converted
  * @param Function $conversion
  *   How to convert individual items
- *
- * @return Array:NULL
  */
 function miicard_collection_primary($collection, $conversion) {
   $value = NULL;

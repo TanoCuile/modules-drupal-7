@@ -14,17 +14,6 @@ function miicard_requirements($phase) {
   $t = get_t();
 
   if ($phase == 'runtime') {
-    $requirements['miicard_oauth']['title'] = $t('OAuth library for miiCard');
-    if (!class_exists('OAuthRequest')) {
-      $requirements['miicard_oauth']['value'] = $t('Not installed');
-      $requirements['miicard_oauth']['severity'] = REQUIREMENT_ERROR;
-      $requirements['miicard_oauth']['description'] = $t('miiCard: OAuth PHP library not found.');
-    }
-    else {
-      $requirements['miicard_oauth']['value'] = l('OAuth ' . OAuthRequest::$version, 'https://code.google.com/p/oauth/', array('external' => TRUE));
-      $requirements['miicard_oauth']['severity'] = REQUIREMENT_OK;
-    }
-
     if (!variable_get('miicard_consumer_key', FALSE) || !variable_get('miicard_consumer_secret', FALSE)) {
       $requirements['miicard_conf'] = array(
         'title' => $t('miiCard'),

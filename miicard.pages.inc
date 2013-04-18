@@ -81,8 +81,7 @@ function miicard_callback() {
   $force_claims_picker = isset($_REQUEST['$forceClaimsPicker']) ? $_REQUEST['$forceClaimsPicker'] : NULL;
 
   // Get redirect URL.
-  $redirect = isset($_SESSION['miicard_oauth']['destination'])
-            ? $_SESSION['miicard_oauth']['destination'] : url('user/login', array('absolute' => TRUE));
+  $redirect = isset($_SESSION['miicard_oauth']['destination']) ? $_SESSION['miicard_oauth']['destination'] : url('user/login', array('absolute' => TRUE));
 
   // Create miiCard object with as much information as we have.
   $miicard = new MiiCard($key, $secret);
