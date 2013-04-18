@@ -144,4 +144,3 @@
             $this->assertEquals("testUser", $obj->getUsername());
         }
     }
-?>

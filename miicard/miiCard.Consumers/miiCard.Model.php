@@ -856,4 +856,3 @@ class Util
         return $hash[$key];
     }
 }
-?>

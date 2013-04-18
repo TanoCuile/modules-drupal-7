@@ -2,7 +2,6 @@ name = miiCard
 description = Allows users to authenticate against the miiCard service
 package = "Authentication"
 core = 7.x
-version = "7.x-1.0"
 
 configure = admin/config/people/miicard
 
