@@ -35,24 +35,18 @@
       <dt><?php print t('Email address:'); ?></dt>
       <dd>
       <?php foreach ($miicard->getEmailAddresses() as $address): ?>
-        <?php if ($address->getIsPrimary()): ?>
           <?php
             print $address->getAddress();
-            break;
           ?>
-        <?php endif; ?>
       <?php endforeach; ?></dd>
     <?php endif; ?>
     <?php if ($miicard->getPhoneNumbers()): ?>
       <dt><?php print t('Phone number:'); ?></dt>
       <dd>
       <?php foreach ($miicard->getPhoneNumbers() as $number): ?>
-        <?php if ($number->getIsPrimary()): ?>
           <?php
             print "+{$number->getCountryCode()} {$number->getNationalNumber()}";
-            break;
           ?>
-        <?php endif; ?>
       <?php endforeach; ?>
       </dd>
     <?php endif; ?>

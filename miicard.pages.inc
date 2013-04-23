@@ -25,7 +25,6 @@ function miicard_redirect() {
 
   // Start OAuth authentication process.
   $miicard->beginAuthorisation(url('user/login/miicard/callback', array('absolute' => TRUE)));
-  return;
 }
 
 /**
