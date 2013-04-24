@@ -37,7 +37,7 @@ function miicard_map_fields_form() {
     if (isset($property_options[$field['type']])) {
       $options = array_merge(array('' => t('- Do not import -')), $property_options[$field['type']]);
       $form['miicard_user_fields'][$field_name] = array(
-        '#title' => check_plain(t($instance['label'])),
+        '#title' => check_plain($instance['label']),
         '#type' => 'select',
         '#options' => $options,
         '#default_value' => isset($field_defaults[$field_name]) ? $field_defaults[$field_name] : '',
@@ -45,7 +45,7 @@ function miicard_map_fields_form() {
     }
     else {
       $form['miicard_user_fields'][$field_name] = array(
-        '#title' => check_plain(t($instance['label'])),
+        '#title' => check_plain($instance['label']),
         '#type' => 'form_element',
         '#children' => '<em>' . t('No mappable miiCard properties.') . '</em>',
         '#theme_wrappers' => array('form_element'),

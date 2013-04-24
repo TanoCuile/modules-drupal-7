@@ -334,7 +334,7 @@ function miicard_button($text = '') {
   if (empty($text)) {
     $text = miicard_sign_in_text();
   }
-  return l(t($text), 'user/login/miicard', array('attributes' => array('class' => array('miicardLoginButton'))));
+  return l($text, 'user/login/miicard', array('attributes' => array('class' => array('miicardLoginButton'))));
 }
 
 /**
@@ -650,13 +650,13 @@ function miicard_view_identity($account) {
   $output = theme('miicard', array('uid' => $account->uid));
 
   if (!empty($miicard) && ($user->uid == $account->uid)) {
-    $items[] = l(t(miicard_remove_link_text()), 'user/miicard/delete');
+    $items[] = l(miicard_remove_link_text(), 'user/miicard/delete');
     $output .= theme('item_list', array('items' => $items));
   }
 
   if (empty($miicard) && ($user->uid == $account->uid)) {
     $output .= "<p>miiCard proves your identity to the same level as a passport or driver's licence purely online.</p>";
-    $output .= '<p>' . l(t(miicard_add_link_text()), 'user/login/miicard') . '</p>';
+    $output .= '<p>' . l(miicard_add_link_text(), 'user/login/miicard') . '</p>';
   }
   elseif (empty($miicard)) {
     $output .= "<p>This user hasn't attached a miiCard to their account yet. ";
