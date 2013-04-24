@@ -88,7 +88,7 @@ function miicard_map_profile_form() {
     if (isset($property_options[$profile_field['type']])) {
       $options = array_merge(array('' => t('- Do not import -')), $property_options[$profile_field['type']]);
       $form['miicard_user_profile'][$profile_name] = array(
-        '#title' => check_plain(t($profile_field['title'])),
+        '#title' => check_plain($profile_field['title']),
         '#type' => 'select',
         '#options' => $options,
         '#default_value' => isset($field_defaults[$profile_name]) ? $field_defaults[$profile_name] : '',
@@ -96,7 +96,7 @@ function miicard_map_profile_form() {
     }
     else {
       $form['miicard_user_profile'][$profile_name] = array(
-        '#title' => check_plain(t($profile_field['title'])),
+        '#title' => check_plain($profile_field['title']),
         '#type' => 'form_element',
         '#children' => '<em>' . t('No mappable miiCard properties.') . '</em>',
         '#theme_wrappers' => array('form_element'),
