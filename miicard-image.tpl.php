@@ -11,6 +11,6 @@
 ?>
 <?php if ($src): ?>
   <div class="miicard-image">
-    <img src="<?php print $src; ?>" alt="<?php print $alt; ?>" />
+    <img src="<?php print $src; ?>" alt="<?php print $alt; ?>"/>
   </div>
 <?php endif; ?>
