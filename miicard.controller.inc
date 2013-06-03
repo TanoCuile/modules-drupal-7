@@ -15,11 +15,11 @@ class MiiCardController extends DrupalDefaultEntityController {
   protected function attachLoad(&$queried_cards, $revision_id = FALSE) {
     // The data field contains a serialised MiiCardUserProfile object.
     foreach ($queried_cards as $key => $record) {
-      $queried_cards[$key]->data         = unserialize ($record->data);
-      $queried_cards[$key]->access_token = unserialize ($record->access_token);
+      $queried_cards[$key]->data = unserialize($record->data);
+      $queried_cards[$key]->access_token = unserialize($record->access_token);
     }
 
     // Call the default attachLoad() method.
-    parent::attachLoad ($queried_cards, $revision_id);
+    parent::attachLoad($queried_cards, $revision_id);
   }
 }

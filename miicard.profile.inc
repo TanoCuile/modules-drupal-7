@@ -15,17 +15,17 @@ function miicard_profile_fields() {
   static $profile_fields;
 
   if (!isset($profile_fields)) {
-    $profile_fields     = array();
-    $profile_categories = db_select ('profile_field')
-      ->distinct ()
-      ->fields ('profile_field', array('category'))
-      ->orderBy ('category')
-      ->execute ()
-      ->fetchCol ();
+    $profile_fields = array();
+    $profile_categories = db_select('profile_field')
+      ->distinct()
+      ->fields('profile_field', array('category'))
+      ->orderBy('category')
+      ->execute()
+      ->fetchCol();
     foreach ($profile_categories as $profile_category) {
-      $result = _profile_get_fields ($profile_category);
+      $result = _profile_get_fields($profile_category);
       foreach ($result as $field) {
-        $profile_fields[$field->name] = (array)$field;
+        $profile_fields[$field->name] = (array) $field;
       }
     }
   }
@@ -40,21 +40,21 @@ function miicard_profile_fields() {
  * @param object $account
  */
 function _miicard_save_profile(&$edit, $account) {
-  $result = miicard_profile_fields ();
+  $result = miicard_profile_fields();
   foreach ($result as $field_name => $field) {
     if (isset($edit[$field_name])) {
       $value = $edit[$field_name];
-      if (_profile_field_serialize ($field['type'])) {
-        $value = serialize ($edit[$field_name]);
+      if (_profile_field_serialize($field['type'])) {
+        $value = serialize($edit[$field_name]);
       }
 
-      db_merge ('profile_value')
-        ->key (array(
+      db_merge('profile_value')
+        ->key(array(
           'fid' => $field['fid'],
           'uid' => $account->uid,
         ))
-        ->fields (array('value' => $value))
-        ->execute ();
+        ->fields(array('value' => $value))
+        ->execute();
     }
   }
 }
@@ -65,20 +65,20 @@ function _miicard_save_profile(&$edit, $account) {
  * @return array
  */
 function miicard_map_profile_form() {
-  module_load_include ('inc', 'miicard', 'miicard.fields');
+  module_load_include('inc', 'miicard', 'miicard.fields');
 
-  $form                         = array();
+  $form = array();
   $form['miicard_user_profile'] = array(
-    '#type'        => 'fieldset',
-    '#title'       => t ('User profile mapping'),
-    '#description' => t ('Each of your profile fields are listed below. Select the miiCard data you want to import into each field.'),
-    '#tree'        => TRUE,
-    '#weight'      => 5,
+    '#type' => 'fieldset',
+    '#title' => t('User profile mapping'),
+    '#description' => t('Each of your profile fields are listed below. Select the miiCard data you want to import into each field.'),
+    '#tree' => TRUE,
+    '#weight' => 5,
   );
 
   // Each field type can only map to certain types of properties. Build a
   // list for each type that includes reasonable options.
-  $properties       = miicard_mapping_options ();
+  $properties = miicard_mapping_options();
   $property_options = array();
   foreach ($properties as $property => $property_info) {
     if (isset($property_info['field_types'])) {
@@ -88,31 +88,32 @@ function miicard_map_profile_form() {
     }
   }
 
-  $field_defaults = variable_get ('miicard_user_profile', array());
+  $field_defaults = variable_get('miicard_user_profile', array());
 
-  $profile_fields = miicard_profile_fields ();
+  $profile_fields = miicard_profile_fields();
   foreach ($profile_fields as $profile_name => $profile_field) {
     if (isset($property_options[$profile_field['type']])) {
-      $options                                     = array_merge (array('' => t ('- Do not import -')), $property_options[$profile_field['type']]);
+      $options = array_merge(array('' => t('- Do not import -')), $property_options[$profile_field['type']]);
       $form['miicard_user_profile'][$profile_name] = array(
-        '#title'         => check_plain ($profile_field['title']),
-        '#type'          => 'select',
-        '#options'       => $options,
+        '#title' => check_plain($profile_field['title']),
+        '#type' => 'select',
+        '#options' => $options,
         '#default_value' => isset($field_defaults[$profile_name]) ? $field_defaults[$profile_name] : '',
       );
-    } else {
+    }
+    else {
       $form['miicard_user_profile'][$profile_name] = array(
-        '#title'          => check_plain ($profile_field['title']),
-        '#type'           => 'form_element',
-        '#children'       => '<em>' . t ('No mappable miiCard properties.') . '</em>',
+        '#title' => check_plain($profile_field['title']),
+        '#type' => 'form_element',
+        '#children' => '<em>' . t('No mappable miiCard properties.') . '</em>',
         '#theme_wrappers' => array('form_element'),
       );
     }
   }
 
   $form['submit'] = array(
-    '#type'   => 'submit',
-    '#value'  => t ('Map Fields'),
+    '#type' => 'submit',
+    '#value' => t('Map Fields'),
     '#weight' => 100,
   );
 
@@ -124,9 +125,10 @@ function miicard_map_profile_form() {
  */
 function miicard_map_profile_form_submit(&$form, &$form_state) {
   if (isset($form_state['values']['miicard_user_profile'])) {
-    variable_set ('miicard_user_profile', array_filter ($form_state['values']['miicard_user_profile']));
-  } else {
-    variable_set ('miicard_user_profile', array());
+    variable_set('miicard_user_profile', array_filter($form_state['values']['miicard_user_profile']));
+  }
+  else {
+    variable_set('miicard_user_profile', array());
   }
 }
 
@@ -137,9 +139,9 @@ function miicard_map_profile_form_submit(&$form, &$form_state) {
  * @param object $miicard
  */
 function miicard_profile_create_user(&$edit, $miicard) {
-  $profile_map             = variable_get ('miicard_user_profile', array());
-  $profile_mapping_options = miicard_mapping_options ();
-  $profile_fields          = miicard_profile_fields ();
+  $profile_map = variable_get('miicard_user_profile', array());
+  $profile_mapping_options = miicard_mapping_options();
+  $profile_fields = miicard_profile_fields();
   foreach ($profile_map as $profile_field_name => $miicard_property_name) {
     if (isset($profile_fields[$profile_field_name])) {
       $profile_field = $profile_fields[$profile_field_name];
@@ -148,10 +150,11 @@ function miicard_profile_create_user(&$edit, $miicard) {
       }
       if (isset($profile_map[$profile_field_name])) {
         $profile_mapping = $profile_mapping_options[$profile_map[$profile_field_name]];
-        $callback        = 'miicard_field_convert_' . $profile_mapping['conversion'];
+        $callback = 'miicard_field_convert_' . $profile_mapping['conversion'];
         if ($value = $callback($profile_mapping['miicard'], $miicard, $profile_field, array())) {
           $edit[$profile_field_name] = $value['value'];
-        } else {
+        }
+        else {
           $edit[$profile_field_name] = NULL;
         }
       }
