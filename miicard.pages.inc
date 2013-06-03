@@ -16,7 +16,7 @@ function miicard_redirect() {
   $secret = variable_get('miicard_consumer_secret', '');
   $affiliate_code = variable_get('miicard_affiliate_code', NULL);
 
-  $miicard = new MiiCard($key, $secret, NULL, NULL, $affiliate_code);
+  $miicard = new miiCard\Consumers\MiiCard($key, $secret, NULL, NULL, $affiliate_code);
 
   $_SESSION['miicard_oauth'] = array();
 
@@ -83,7 +83,7 @@ function miicard_callback() {
   $redirect = isset($_SESSION['miicard_oauth']['destination']) ? $_SESSION['miicard_oauth']['destination'] : url('user/login', array('absolute' => TRUE));
 
   // Create miiCard object with as much information as we have.
-  $miicard = new MiiCard($key, $secret);
+  $miicard = new miiCard\Consumers\MiiCard($key, $secret);
 
   // If we are in the middle of OAuth callback.
   if ($miicard->isAuthorisationCallback()) {

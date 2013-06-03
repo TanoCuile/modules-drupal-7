@@ -6,6 +6,7 @@ core = 7.x
 configure = admin/config/people/miicard
 
 files[] = miicard.controller.inc
+files[] = miiCard.Consumers/miiCard.Model.php
+files[] = miiCard.Consumers/miiCard.Consumers.php
 
 dependencies[] = oauth_common
-dependencies[] = libraries
