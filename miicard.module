@@ -6,6 +6,16 @@
  * provide trusted profile information
  */
 
+use miiCard\Consumers\Consumers\MiiCard;
+use miiCard\Consumers\Consumers\MiiCardOAuthClaimsService;
+use miiCard\Consumers\Model\EmailAddress;
+use miiCard\Consumers\Model\Identity;
+use miiCard\Consumers\Model\MiiApiErrorCode;
+use miiCard\Consumers\Model\MiiUserProfile;
+use miiCard\Consumers\Model\PhoneNumber;
+use miiCard\Consumers\Model\PostalAddress;
+use miiCard\Consumers\Model\WebProperty;
+
 define('MIICARD_OAUTH', 'https://sts.miicard.com/auth/OAuth.ashx');
 define('MIICARD_API', 'https://sts.miicard.com/api/v1/Claims.svc/json/GetClaims');
 define('MIICARD_ADD_LINK', 'Verify your identity with miiCard');
@@ -21,6 +31,18 @@ define('MIICARD_HIGHLIGHT_APPROVED_USERS', TRUE);
  */
 function miicard_init() {
   drupal_add_css(drupal_get_path('module', 'miicard') . '/miicard.css');
+
+  // Include MiiCard API library
+  $library = libraries_load('miicard');
+  if ($library) {
+    $loaded_files = libraries_load_files($library);
+    if ($loaded_files < 2) {
+      drupal_set_message(t("Can't load miiCard API library files"), 'warning');
+    }
+  }
+  else {
+    drupal_set_message(t('Please install <a href="@download_page">MiiCard API</a> library', array('@download_page' => 'http://www.miicard.com/developers/libraries-components/php-library')));
+  }
 }
 
 /**
@@ -251,7 +273,7 @@ function _miicard_register_submit($form, $form_state = array()) {
 /**
  * Gets a miiCard object configured for the current content, or null.
  *
- * @return miiCard\Consumers\MiiCard|null
+ * @return MiiCard|null
  */
 function _miicard_get_registration_mode_wrapper() {
   $miicard = NULL;
@@ -260,7 +282,7 @@ function _miicard_get_registration_mode_wrapper() {
     $key = variable_get('miicard_consumer_key', '');
     $secret = variable_get('miicard_consumer_secret', '');
 
-    $miicard = new miiCard\Consumers\MiiCard($key, $secret, $_SESSION['miicard_oauth']['access_token'], $_SESSION['miicard_oauth']['access_token_secret']);
+    $miicard = new MiiCard($key, $secret, $_SESSION['miicard_oauth']['access_token'], $_SESSION['miicard_oauth']['access_token_secret']);
   }
 
   return $miicard;
@@ -471,7 +493,7 @@ function _miicard_identity_save_profile($profile, $access_token, $access_token_s
 /**
  * Update/save local copy of miiCard public data from API.
  *
- * @param miiCard\Consumers\MiiCard $miicard
+ * @param miiCard\Consumers\Consumers\MiiCard $miicard
  *   A miiCard API class holding the current miiCard public data.
  * @param integer $uid
  *
@@ -1052,4 +1074,33 @@ function miicard_url($url) {
   else {
     return $url;
   }
+}
+
+/**
+ * Implements hook_libraries_info
+ *
+ * @return array
+ */
+function miicard_libraries_info() {
+  return array(
+    'miicard' => array(
+      'name' => 'MiiCard wraper library',
+      'vendor url' => 'http://www.miicard.com',
+      'download url' => 'http://www.miicard.com/developers/libraries-components/php-library',
+      'files' => array(
+        'php' => array(
+          'miiCard.Consumers/miiCard.Consumers.php',
+          'miiCard.Consumers/miiCard.Model.php',
+        ),
+      ),
+      'integration files' => array(
+        'miicard' => array(
+          'php' => array(
+            'miiCard.Consumers.php',
+            'miiCard.Model.php',
+          ),
+        ),
+      ),
+    )
+  );
 }

@@ -452,6 +452,8 @@ function miicard_field_convert_card_image_link($miicard_property_name, $miicard,
 /**
  * Email should be formatted correctly in place so do nothing.
  *
+ * @var $item object
+ *
  * @return string
  */
 function miicard_convert_email_type($item) {
@@ -460,6 +462,8 @@ function miicard_convert_email_type($item) {
 
 /**
  * Format identities as links.
+ *
+ * @var $item object
  *
  * @return string
  */
@@ -470,6 +474,8 @@ function miicard_convert_identity_type($item) {
 /**
  * Build valid international dialing code for all phone numbers.
  *
+ * @var $item object
+ *
  * @return string
  */
 function miicard_convert_phone_type($item) {
@@ -479,6 +485,8 @@ function miicard_convert_phone_type($item) {
 /**
  * Web properties should be formatted correctly in place so do nothing.
  *
+ * @var $item object
+ *
  * @return string
  */
 function miicard_convert_web_property_type($item) {
@@ -487,6 +495,8 @@ function miicard_convert_web_property_type($item) {
 
 /**
  * Build a complete postal address from it's contituent parts.
+ *
+ * @var $item object
  *
  * @return string
  */
@@ -509,7 +519,7 @@ function miicard_convert_postal_type($item) {
  *
  * @param array $collection
  *   The list to be converted
- * @param Function $conversion
+ * @param callable $conversion
  *   How to convert individual items
  *
  * @return array
@@ -532,7 +542,7 @@ function miicard_collection_list($collection, $conversion) {
  *
  * @param array $collection
  *   The list to be converted
- * @param Function $conversion
+ * @param callable $conversion
  *   How to convert individual items
  *
  * @return string
