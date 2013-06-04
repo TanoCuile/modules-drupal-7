@@ -34,14 +34,13 @@ function miicard_init() {
 
   // Include MiiCard API library
   $library = libraries_load('miicard');
-  if ($library) {
-    $loaded_files = libraries_load_files($library);
-    if ($loaded_files < 2) {
-      drupal_set_message(t("Can't load miiCard API library files"), 'warning');
-    }
+  $loaded_files = libraries_load_files($library);
+
+  if ($loaded_files == 0) {
+    drupal_set_message(t('Please install <a href="@download_page">MiiCard API</a> library', array('@download_page' => 'http://www.miicard.com/developers/libraries-components/php-library')), 'warning');
   }
-  else {
-    drupal_set_message(t('Please install <a href="@download_page">MiiCard API</a> library', array('@download_page' => 'http://www.miicard.com/developers/libraries-components/php-library')));
+  elseif ($loaded_files < 2) {
+    drupal_set_message(t("Can't load miiCard API library files"), 'warning');
   }
 }
 
