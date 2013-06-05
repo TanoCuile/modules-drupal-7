@@ -948,7 +948,7 @@ function miicard_preprocess_miicard_template(&$variables) {
           'line2' => $postal_address->getLine2()
         );
 
-        $variables['postal_addresses'][] = $postal_address_vars;
+        $variables['postal_addresses'][] = theme('miicard_postal_address', $postal_address_vars);
       }
     }
   }
