@@ -113,6 +113,9 @@ function miicard_field_create_user(&$edit, $miicard) {
  */
 function miicard_field_convert_text($miicard_property_name, $miicard, $field, $instance) {
   $value = NULL;
+  if (!isset($miicard->data) || !is_object($miicard->data)) {
+    return $value;
+  }
   $func = "get{$miicard_property_name}";
   $text = $miicard->data->$func();
   if (isset($text)) {
@@ -136,6 +139,9 @@ function miicard_field_convert_text($miicard_property_name, $miicard, $field, $i
  * @return string
  */
 function miicard_field_convert_boolean($miicard_property_name, $miicard, $field, $instance) {
+  if (!isset($miicard->data) || !is_object($miicard->data)) {
+    return NULL;
+  }
   $func = "get{$miicard_property_name}";
 
   return $miicard->data->$func();
@@ -157,6 +163,9 @@ function miicard_field_convert_boolean($miicard_property_name, $miicard, $field,
  */
 function miicard_field_convert_date($miicard_property_name, $miicard, $field, $instance) {
   $value = NULL;
+  if (!isset($miicard->data) || !is_object($miicard->data)) {
+    return $value;
+  }
   $func = "get{$miicard_property_name}";
   $type = isset($field['type']) ? $field['type'] : 'datetime';
   $prop = $miicard->data->$func();
@@ -196,6 +205,9 @@ function miicard_field_convert_date($miicard_property_name, $miicard, $field, $i
  */
 function miicard_field_convert_full_name($miicard_property_name, $miicard, $field, $instance) {
   $value = NULL;
+  if (!isset($miicard->data) || !is_object($miicard->data)) {
+    return $value;
+  }
   $first = $miicard->data->getFirstName();
   $last = $miicard->data->getLastName();
   if (isset($first) && isset($last)) {
@@ -219,6 +231,9 @@ function miicard_field_convert_full_name($miicard_property_name, $miicard, $fiel
  */
 function miicard_field_convert_email_primary($miicard_property_name, $miicard, $field, $instance) {
   $value = NULL;
+  if (!isset($miicard->data) || !is_object($miicard->data)) {
+    return $value;
+  }
   $func = "get{$miicard_property_name}";
   $prop = $miicard->data->$func();
   if (isset($prop)) {
@@ -240,6 +255,9 @@ function miicard_field_convert_email_primary($miicard_property_name, $miicard, $
  */
 function miicard_field_convert_email_list($miicard_property_name, $miicard, $field, $instance) {
   $value = NULL;
+  if (!isset($miicard->data) || !is_object($miicard->data)) {
+    return $value;
+  }
   $func = "get{$miicard_property_name}";
   $list = array();
   $prop = $miicard->data->$func();
@@ -263,6 +281,9 @@ function miicard_field_convert_email_list($miicard_property_name, $miicard, $fie
  */
 function miicard_field_convert_postal_primary($miicard_property_name, $miicard, $field, $instance) {
   $value = NULL;
+  if (!isset($miicard->data) || !is_object($miicard->data)) {
+    return $value;
+  }
   $func = "get{$miicard_property_name}";
   $prop = $miicard->data->$func();
 
@@ -285,6 +306,9 @@ function miicard_field_convert_postal_primary($miicard_property_name, $miicard, 
  */
 function miicard_field_convert_postal_list($miicard_property_name, $miicard, $field, $instance) {
   $value = NULL;
+  if (!isset($miicard->data) || !is_object($miicard->data)) {
+    return $value;
+  }
   $func = "get{$miicard_property_name}";
   $list = array();
   $prop = $miicard->data->$func();
@@ -308,6 +332,9 @@ function miicard_field_convert_postal_list($miicard_property_name, $miicard, $fi
  */
 function miicard_field_convert_identity_list($miicard_property_name, $miicard, $field, $instance) {
   $value = NULL;
+  if (!isset($miicard->data) || !is_object($miicard->data)) {
+    return $value;
+  }
   $func = "get{$miicard_property_name}";
   $list = array();
   $prop = $miicard->data->$func();
@@ -331,6 +358,9 @@ function miicard_field_convert_identity_list($miicard_property_name, $miicard, $
  */
 function miicard_field_convert_phone_primary($miicard_property_name, $miicard, $field, $instance) {
   $value = NULL;
+  if (!isset($miicard->data) || !is_object($miicard->data)) {
+    return $value;
+  }
   $func = "get{$miicard_property_name}";
   $prop = $miicard->data->$func();
   if (isset($prop)) {
@@ -352,6 +382,9 @@ function miicard_field_convert_phone_primary($miicard_property_name, $miicard, $
  */
 function miicard_field_convert_phone_list($miicard_property_name, $miicard, $field, $instance) {
   $value = NULL;
+  if (!isset($miicard->data) || !is_object($miicard->data)) {
+    return $value;
+  }
   $func = "get{$miicard_property_name}";
   $list = array();
   $prop = $miicard->data->$func();
@@ -375,6 +408,9 @@ function miicard_field_convert_phone_list($miicard_property_name, $miicard, $fie
  */
 function miicard_field_convert_web_property_list($miicard_property_name, $miicard, $field, $instance) {
   $value = NULL;
+  if (!isset($miicard->data) || !is_object($miicard->data)) {
+    return $value;
+  }
   $func = "get{$miicard_property_name}";
   $list = array();
   $prop = $miicard->data->$func();
@@ -398,6 +434,9 @@ function miicard_field_convert_web_property_list($miicard_property_name, $miicar
  */
 function miicard_field_convert_profile_url($miicard_property_name, $miicard, $field, $instance) {
   $value = NULL;
+  if (!isset($miicard->data) || !is_object($miicard->data)) {
+    return $value;
+  }
   $prop = $miicard->data->getProfileUrl();
   if (isset($prop) && $miicard->data->getHasPublicProfile()) {
     $value = miicard_field_convert_text($miicard_property_name, $miicard, $field, $instance);
@@ -418,6 +457,9 @@ function miicard_field_convert_profile_url($miicard_property_name, $miicard, $fi
  */
 function miicard_field_convert_profile_link($miicard_property_name, $miicard, $field, $instance) {
   $value = NULL;
+  if (!isset($miicard->data) || !is_object($miicard->data)) {
+    return $value;
+  }
   if ($url = miicard_field_convert_profile_url($miicard_property_name, $miicard, $field, $instance)) {
     $value = l(t('miiCard profile'), $url['value']);
   }
@@ -437,6 +479,9 @@ function miicard_field_convert_profile_link($miicard_property_name, $miicard, $f
  */
 function miicard_field_convert_card_image_link($miicard_property_name, $miicard, $field, $instance) {
   $value = NULL;
+  if (!isset($miicard->data) || !is_object($miicard->data)) {
+    return $value;
+  }
   if ($miicard->getHasPublicProfile() && $url = miicard_field_convert_text('ProfileUrl', $miicard, $field, $instance)) {
     if ($src = miicard_field_convert_text($miicard_property_name, $miicard, $field, $instance)) {
       $value = l(theme('image', array(
