@@ -34,6 +34,8 @@ function miicard_init() {
 
   // Include MiiCard API library
   $library = libraries_load('miicard');
+
+  // $library is not empty if was declared in hook_libraries_info
   $loaded_files = libraries_load_files($library);
 
   if ($loaded_files == 0) {
