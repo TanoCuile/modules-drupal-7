@@ -821,7 +821,31 @@ function miicard_button($text = '') {
  * Theme MiiCard postal address
  */
 function theme_miicard_postal_address($variables) {
-  return sprintf('%s %s %s', $variables['country'], $variables['city'], $variables['house']);
+  $addressArgs = array();
+  if ($variables['house']) {
+    $addressArgs[] = $variables['house'];
+  }
+  else {
+    $addressArgs[] = 'no';
+  }
+
+  if ($variables['line1']) {
+    $addressArgs[] = $variables['line1'];
+  }
+
+  if ($variables['line2']) {
+    $addressArgs[] = $variables['line2'];
+  }
+
+  $addressArgs[] = $variables['city'];
+
+  if ($variables['region']) {
+    $addressArgs[] = $variables['region'];
+  }
+
+  $addressArgs[] = $variables['country'];
+
+  return implode(' ', $addressArgs);
 }
 
 /**
@@ -874,7 +898,8 @@ function miicard_preprocess_miicard_template(&$variables) {
 
     $variables['has_public_profile'] = $miicard->getHasPublicProfile();
 
-    $variables['date_of_birth'] = $miicard->getDateOfBirth();
+    $variables['date_of_birth'] = format_date($miicard->getDateOfBirth(), 'custom', 'd/m/Y');
+    $variables['date_of_birth_timestamp'] = $miicard->getDateOfBirth();
 
     if ($variables['card_image_url'] && $variables['has_public_profile']) {
       $variables['miicard_url'] = miicard_url($miicard->getProfileUrl());
