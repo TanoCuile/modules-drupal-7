@@ -159,7 +159,7 @@ function miicard_field_convert_date($miicard_property_name, $miicard, $field, $i
   $value = NULL;
   $func = "get{$miicard_property_name}";
   $type = isset($field['type']) ? $field['type'] : 'datetime';
-  $prop = $miicard->data->func();
+  $prop = $miicard->data->$func();
   $date = isset($prop) ? $prop : 0;
   if ($date > 0) {
     if ($type == 'profile_date') {
